@@ -110,3 +110,31 @@ def export_results_excel(
         headers=headers,
         media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+@router.get("/review/{tryout_id}")
+def get_my_exam_review(
+    tryout_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get a per-question review of the current student's own submission for a tryout.
+    Returns each question with: student's answer, correct answer, is_correct, explanation.
+    """
+    review = crud_result.get_exam_review(db, tryout_id=tryout_id, student_id=current_user.id)
+    return review
+
+
+@router.get("/review/{tryout_id}/student/{student_id}")
+def get_student_exam_review_admin(
+    tryout_id: int,
+    student_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_active_admin),
+) -> Any:
+    """
+    Admin/tutor endpoint: get per-question review for a specific student's submission.
+    """
+    review = crud_result.get_exam_review(db, tryout_id=tryout_id, student_id=student_id)
+    return review

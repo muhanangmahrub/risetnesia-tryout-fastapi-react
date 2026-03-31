@@ -41,6 +41,80 @@ const toLocalISO = (dateStr: string | null) => {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
 
+// ── Admin Review Modal Component ───────────────────────────────────────────────
+const AdminReviewModal = ({ tryoutId, studentId, studentName, onClose }: {
+  tryoutId: number; studentId: number; studentName: string; onClose: () => void;
+}) => {
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const { data: review, isLoading } = useQuery({
+    queryKey: ['admin-review', tryoutId, studentId],
+    queryFn: async () => (await api.get(`/results/review/${tryoutId}/student/${studentId}`)).data,
+  });
+  const q = review?.[reviewIdx];
+  const total = review?.length || 0;
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9990] p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl my-4 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-5 border-b flex-shrink-0">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Jawaban: {studentName}</h3>
+            <p className="text-sm text-slate-500 mt-0.5">Review per-soal</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} /></button>
+        </div>
+        {review && (
+          <div className="flex gap-3 px-5 py-3 bg-slate-50 border-b text-sm flex-shrink-0 flex-wrap">
+            <span className="text-green-700 font-semibold">✓ {review.filter((r: any) => r.is_correct).length} Benar</span>
+            <span className="text-red-600 font-semibold">✗ {review.filter((r: any) => !r.is_correct).length} Salah</span>
+            <div className="flex gap-1 ml-auto flex-wrap">
+              {review.map((_: any, i: number) => (
+                <button key={i} onClick={() => setReviewIdx(i)}
+                  className={`w-4 h-4 rounded-full border transition-all ${i === reviewIdx ? 'ring-2 ring-brand-400 scale-110' : ''} ${review[i].is_correct ? 'bg-green-400' : 'bg-red-400'}`} />
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="overflow-y-auto flex-1 p-5">
+          {isLoading && <div className="text-center py-12 text-slate-500">Memuat...</div>}
+          {q && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-slate-500">Soal {reviewIdx + 1}/{total}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${q.is_correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{q.is_correct ? '✓ Benar' : '✗ Salah'}</span>
+                {q.subject && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{q.subject}</span>}
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <MathRenderer html={q.question_text} className="text-slate-800" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-lg border">
+                  <p className="text-xs font-semibold text-slate-500 mb-1">Jawaban Siswa</p>
+                  <p className={`text-sm font-bold ${q.is_correct ? 'text-green-700' : 'text-red-700'}`}>{q.student_answer || <span className="italic text-slate-400 font-normal">Tidak dijawab</span>}</p>
+                </div>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <p className="text-xs font-semibold text-green-600 mb-1">Kunci Jawaban</p>
+                  <p className="text-sm font-bold text-green-700">{q.correct_answer}</p>
+                </div>
+              </div>
+              {q.explanation && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2"><BookOpen size={15} className="text-amber-600" /><span className="text-sm font-bold text-amber-700">Pembahasan</span></div>
+                  <MathRenderer html={q.explanation} className="text-sm text-slate-700" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between px-5 py-4 border-t bg-slate-50 rounded-b-2xl flex-shrink-0">
+          <Button onClick={() => setReviewIdx(i => Math.max(0, i - 1))} disabled={reviewIdx === 0}>← Sebelumnya</Button>
+          <span className="text-sm text-slate-500">{reviewIdx + 1} / {total}</span>
+          <Button onClick={() => setReviewIdx(i => Math.min(total - 1, i + 1))} disabled={reviewIdx === total - 1}>Berikutnya →</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ManagementDashboard = ({ user }: { user: any }) => {
   const isAdmin = user?.role === 'admin';
   type Tab = 'users' | 'classes' | 'scheduling' | 'questions' | 'tryouts' | 'analytics';
@@ -85,6 +159,7 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
 
   // Analytics state
   const [analyticsTryoutId, setAnalyticsTryoutId] = useState<number | null>(null);
+  const [adminReviewModal, setAdminReviewModal] = useState<{ tryoutId: number; studentId: number; studentName: string } | null>(null);
 
   // Categories state
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -355,8 +430,17 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
   const tabClass = (tab: Tab) =>
     `pb-4 px-2 font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${activeTab === tab ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-700'}`;
 
+
   return (
     <div className="space-y-6">
+      {adminReviewModal && (
+        <AdminReviewModal
+          tryoutId={adminReviewModal.tryoutId}
+          studentId={adminReviewModal.studentId}
+          studentName={adminReviewModal.studentName}
+          onClose={() => setAdminReviewModal(null)}
+        />
+      )}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
         <p className="text-slate-500 mt-1">Kelola semua fitur platform tryout dari sini.</p>
@@ -626,8 +710,8 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                         <input className="w-full border border-slate-300 rounded p-2" value={qForm.correct_answer} onChange={(e) => setQForm({ ...qForm, correct_answer: e.target.value })} placeholder="Ketik jawaban yang benar" /></div>
                     )}
                     
-                    <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan</label>
-                      <textarea className="w-full border border-slate-300 rounded p-2 h-20" value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} placeholder="Jelaskan mengapa jawaban ini benar..." /></div>
+                    <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan <span className="text-slate-400 font-normal text-xs">(opsional — gunakan editor untuk format teks & rumus)</span></label>
+                      <RichTextEditor value={qForm.explanation} onChange={(val: string) => setQForm({ ...qForm, explanation: val })} placeholder="Jelaskan mengapa jawaban ini benar..." minHeight="100px" /></div>
                     <div className="pt-4 border-t border-slate-100">
                       <Button onClick={() => createQuestionMutation.mutate(qForm)} isLoading={createQuestionMutation.isPending} disabled={!qForm.question_text || (qForm.question_type === 'MULTIPLE_CHOICE' && (!qForm.option_a || !qForm.option_b || !qForm.option_c || !qForm.option_d))}>Simpan Soal</Button>
                     </div>
@@ -854,6 +938,13 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                               </div>
                               <div className="flex-1"><div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden"><div className={`h-full transition-all duration-1000 ${result.score >= 80 ? 'bg-green-500' : result.score >= 60 ? 'bg-brand-500' : result.score >= 40 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${result.score}%` }} /></div></div>
                               <div className="w-16 text-right font-bold text-slate-800">{result.score}%</div>
+                              <button
+                                onClick={() => setAdminReviewModal({ tryoutId: analyticsTryoutId!, studentId: result.student_id, studentName: result.student?.name || 'Siswa' })}
+                                className="flex-shrink-0 flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors"
+                                title="Lihat jawaban siswa ini"
+                              >
+                                <BookOpen size={12} /> Detail
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -1159,7 +1250,12 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
               </div>
               <div>
                 <h4 className="font-bold text-slate-700 mb-2">Pembahasan:</h4>
-                <p className="text-sm text-slate-600 bg-amber-50/50 p-4 rounded-lg border border-amber-100 italic whitespace-pre-wrap">{detailQuestion.explanation || 'Tidak ada pembahasan.'}</p>
+                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
+                  {detailQuestion.explanation
+                    ? <MathRenderer html={detailQuestion.explanation} className="text-sm text-slate-600 italic" />
+                    : <p className="text-sm text-slate-400 italic">Tidak ada pembahasan.</p>
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -1314,8 +1410,8 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                     <input className="w-full border border-slate-300 rounded p-2" value={qForm.correct_answer} onChange={(e) => setQForm({ ...qForm, correct_answer: e.target.value })} placeholder="Ketik jawaban yang benar" /></div>
                 )}
 
-                <div className="mb-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan</label>
-                <textarea className="w-full border border-slate-300 rounded p-2 h-20" value={qForm.explanation} onChange={(e) => setQForm({ ...qForm, explanation: e.target.value })} /></div>
+                <div className="mb-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan <span className="text-slate-400 font-normal text-xs">(opsional)</span></label>
+                <RichTextEditor value={qForm.explanation} onChange={(val: string) => setQForm({ ...qForm, explanation: val })} placeholder="Jelaskan mengapa jawaban ini benar..." minHeight="100px" /></div>
               <Button className="w-full" onClick={() => updateQuestionMutation.mutate(qForm)} isLoading={updateQuestionMutation.isPending} disabled={!qForm.question_text}>Simpan Perubahan</Button>
             </div>
           </div>

@@ -105,3 +105,53 @@ def has_submitted(db: Session, *, tryout_id: int, student_id: int) -> bool:
         Result.student_id == student_id
     ).first() is not None
 
+
+def get_exam_review(db: Session, *, tryout_id: int, student_id: int) -> list:
+    """
+    Return a per-question review for a student's submission on a tryout.
+    Each entry contains: question data + student's answer + is_correct flag.
+    """
+    # Load all student answers indexed by question_id
+    student_answers = get_student_answers(db, tryout_id=tryout_id, student_id=student_id)
+    answer_map = {a.question_id: a.answer for a in student_answers}
+
+    # Load all questions for this tryout (in order)
+    tryout = db.query(Tryout).get(tryout_id)
+    if not tryout:
+        return []
+
+    review = []
+    for question in tryout.questions:
+        q_type = getattr(question, 'question_type', 'MULTIPLE_CHOICE') or 'MULTIPLE_CHOICE'
+        student_answer = answer_map.get(question.id, None)
+        correct = question.correct_answer
+
+        if q_type == 'ESSAY':
+            is_correct = str(correct or '').strip().lower() == str(student_answer or '').strip().lower()
+        elif q_type == 'MULTIPLE_ANSWERS':
+            c_set = set(x.strip().upper() for x in str(correct or '').split(',') if x.strip())
+            s_set = set(x.strip().upper() for x in str(student_answer or '').split(',') if x.strip())
+            is_correct = c_set == s_set
+        elif q_type == 'TRUE_FALSE':
+            c_tf = [x.strip().upper() for x in str(correct or '').split(',') if x.strip()]
+            s_tf = [x.strip().upper() for x in str(student_answer or '').split(',') if x.strip()]
+            is_correct = c_tf == s_tf
+        else:
+            is_correct = correct == student_answer
+
+        review.append({
+            'question_id': question.id,
+            'question_text': question.question_text,
+            'question_type': q_type,
+            'image_url': question.image_url,
+            'option_a': question.option_a,
+            'option_b': question.option_b,
+            'option_c': question.option_c,
+            'option_d': question.option_d,
+            'correct_answer': correct,
+            'student_answer': student_answer,
+            'is_correct': is_correct,
+            'explanation': question.explanation,
+            'subject': question.subject,
+        })
+    return review
