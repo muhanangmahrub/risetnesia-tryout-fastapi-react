@@ -59,6 +59,12 @@ yarn-error.log*
 pnpm-debug.log*
 
 # ===== Uploaded static files (runtime-generated, not part of source) =====
+# Photos uploaded by users/admin — not source code
+backend/static/*.jpg
+backend/static/*.jpeg
+backend/static/*.png
+backend/static/*.gif
+backend/static/*.webp
 backend/static/uploads/
 
 # ===== Database / Temp files =====
