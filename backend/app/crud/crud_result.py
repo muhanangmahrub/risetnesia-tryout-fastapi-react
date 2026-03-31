@@ -50,7 +50,11 @@ def calculate_and_save_result(db: Session, *, tryout_id: int, student_id: int, w
             else:
                 wrong_count += 1
             
-    total_questions = correct_count + wrong_count
+    # The real total questions for this tryout
+    total_questions = db.query(Question).filter(Question.tryout_id == tryout_id).count()
+    
+    # wrong_count includes both explicitly wrong answers and unanswered questions
+    wrong_count = total_questions - correct_count
     score = (correct_count / total_questions * 100) if total_questions > 0 else 0
     
     # Check if result already exists
