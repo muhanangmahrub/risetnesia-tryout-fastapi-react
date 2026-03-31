@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RichTextEditor } from '../../components/ui/RichTextEditor';
+import { MathRenderer } from '../../components/ui/MathRenderer';
 import { api } from '../../services/api';
 import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -12,6 +13,15 @@ const correctUTC = (dateStr: string | null) => {
   return new Date(dateStr + 'Z');
 };
 
+/** Strip HTML tags and LaTeX delimiters for plain-text list previews */
+const stripHtml = (html: string) => {
+  return html
+    .replace(/<[^>]*>/g, ' ')       // remove HTML tags
+    .replace(/\$\$([^$]+)\$\$/g, '[$1]')   // $$...$$ -> [formula]
+    .replace(/\$([^$]+)\$/g, '[$1]')       // $...$ -> [formula]
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 const formatDateID = (date: Date | null | undefined) => {
   if (!date) return 'Belum diatur';
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -653,7 +663,7 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                         {questions?.map((q: any) => (
                           <tr key={q.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
                             <td className="p-4 font-medium text-slate-700 max-w-md">
-                              <div className="truncate">{q.question_text}</div>
+                              <div className="truncate">{stripHtml(q.question_text)}</div>
                             </td>
                             <td className="p-4 text-slate-600">
                               <span className="bg-slate-100 px-2 py-1 rounded text-xs">{q.subject || 'Umum'}</span>
@@ -752,7 +762,7 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                                   />
                                 </td>
                                 <td className="p-4 text-slate-700 font-medium">
-                                  <div className="truncate max-w-xl group-hover:text-brand-700">{q.question_text}</div>
+                                  <div className="truncate max-w-xl group-hover:text-brand-700">{stripHtml(q.question_text)}</div>
                                 </td>
                                 <td className="p-4">
                                   <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold">{q.subject || 'Umum'}</span>
@@ -1135,7 +1145,7 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
             <div className="space-y-6">
               <div>
                 <h4 className="font-bold text-slate-700 mb-2">Pertanyaan:</h4>
-                <p className="text-slate-800 bg-slate-50 p-4 rounded-lg border border-slate-100 whitespace-pre-wrap">{detailQuestion.question_text}</p>
+                <MathRenderer html={detailQuestion.question_text} className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-slate-800" />
                 {detailQuestion.image_url && <img src={api.defaults.baseURL?.replace('/api/v1', '') + detailQuestion.image_url} alt="Soal" className="mt-4 max-h-64 object-contain rounded-lg border" />}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1330,7 +1340,7 @@ export const ManagementDashboard = ({ user }: { user: any }) => {
                   <div key={q.id} className="p-4 hover:bg-slate-50 flex gap-3">
                     <span className="text-slate-400 font-mono text-xs mt-1">{(i+1).toString().padStart(2, '0')}</span>
                     <div className="flex-1">
-                      <p className="text-sm text-slate-800 line-clamp-2">{q.question_text}</p>
+                      <p className="text-sm text-slate-800 line-clamp-2">{stripHtml(q.question_text)}</p>
                       <div className="flex gap-2 mt-2">
                         <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded uppercase font-bold text-slate-500">{q.subject}</span>
                         <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded uppercase font-bold text-slate-500">{q.difficulty}</span>
