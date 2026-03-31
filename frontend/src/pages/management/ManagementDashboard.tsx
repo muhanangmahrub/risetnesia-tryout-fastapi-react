@@ -65,12 +65,17 @@ const AdminReviewModal = ({ tryoutId, studentId, studentName, onClose }: {
         {review && (
           <div className="flex gap-3 px-5 py-3 bg-slate-50 border-b text-sm flex-shrink-0 flex-wrap">
             <span className="text-green-700 font-semibold">✓ {review.filter((r: any) => r.is_correct).length} Benar</span>
-            <span className="text-red-600 font-semibold">✗ {review.filter((r: any) => !r.is_correct).length} Salah</span>
+            <span className="text-red-600 font-semibold">✗ {review.filter((r: any) => !r.is_correct && r.student_answer).length} Salah</span>
+            <span className="text-slate-500 font-semibold">— {review.filter((r: any) => !r.is_correct && !r.student_answer).length} Kosong</span>
             <div className="flex gap-1 ml-auto flex-wrap">
-              {review.map((_: any, i: number) => (
-                <button key={i} onClick={() => setReviewIdx(i)}
-                  className={`w-4 h-4 rounded-full border transition-all ${i === reviewIdx ? 'ring-2 ring-brand-400 scale-110' : ''} ${review[i].is_correct ? 'bg-green-400' : 'bg-red-400'}`} />
-              ))}
+              {review.map((_: any, i: number) => {
+                const isUnanswered = !review[i].is_correct && !review[i].student_answer;
+                const dotColor = review[i].is_correct ? 'bg-green-400' : isUnanswered ? 'bg-slate-300' : 'bg-red-400';
+                return (
+                  <button key={i} onClick={() => setReviewIdx(i)}
+                    className={`w-4 h-4 rounded-full border transition-all ${i === reviewIdx ? 'ring-2 ring-brand-400 scale-110' : ''} ${dotColor}`} />
+                );
+              })}
             </div>
           </div>
         )}
@@ -80,7 +85,12 @@ const AdminReviewModal = ({ tryoutId, studentId, studentName, onClose }: {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-slate-500">Soal {reviewIdx + 1}/{total}</span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${q.is_correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{q.is_correct ? '✓ Benar' : '✗ Salah'}</span>
+                {(() => {
+                  const isUnanswered = !q.is_correct && !q.student_answer;
+                  if (q.is_correct) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">✓ Benar</span>;
+                  if (isUnanswered) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">— Tidak Dijawab</span>;
+                  return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">✗ Salah</span>;
+                })()}
                 {q.subject && <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{q.subject}</span>}
               </div>
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
