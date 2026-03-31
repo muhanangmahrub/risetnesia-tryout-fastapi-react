@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody } from '../../components/ui/Card';
 import { AlertCircle, Clock } from 'lucide-react';
+import { MathRenderer } from '../../components/ui/MathRenderer';
 
 export const ExamPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -157,7 +158,7 @@ export const ExamPage = () => {
           <div className="flex-1 flex flex-col">
             <Card className="flex-1 mb-6">
               <CardBody className="text-lg">
-                <div className="prose max-w-none text-slate-800 mb-8" dangerouslySetInnerHTML={{ __html: currentQuestion.question_text }} />
+                <MathRenderer html={currentQuestion.question_text} className="text-slate-800 mb-8 text-base" />
                 {currentQuestion.image_url && (
                   <div className="mb-6">
                     <img
