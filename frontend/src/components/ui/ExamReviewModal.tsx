@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { Button } from './Button';
 import { MathRenderer } from './MathRenderer';
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { resolveImageUrl } from '../../utils/url';
 
 export interface ReviewItem {
   question_id: number;
@@ -14,6 +15,12 @@ export interface ReviewItem {
   option_b?: string;
   option_c?: string;
   option_d?: string;
+  option_e?: string;
+  option_a_image?: string;
+  option_b_image?: string;
+  option_c_image?: string;
+  option_d_image?: string;
+  option_e_image?: string;
   correct_answer?: string;
   student_answer?: string;
   is_correct: boolean;
@@ -35,7 +42,7 @@ export const ExamReviewModal = ({ tryoutId, tryoutTitle, onClose }: { tryoutId: 
   const q = review?.[idx];
   const total = review?.length || 0;
 
-  const optionLabel: Record<string, string> = { a: 'A', b: 'B', c: 'C', d: 'D' };
+  const optionLabel: Record<string, string> = { a: 'A', b: 'B', c: 'C', d: 'D', e: 'E' };
 
   const getOptionStyle = (opt: string, q: ReviewItem) => {
     const isCorrect = opt.toUpperCase() === q.correct_answer?.toUpperCase();
@@ -112,7 +119,7 @@ export const ExamReviewModal = ({ tryoutId, tryoutTitle, onClose }: { tryoutId: 
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <MathRenderer html={q.question_text} className="text-slate-800" />
                 {q.image_url && (
-                  <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${q.image_url}`}
+                  <img src={resolveImageUrl(q.image_url)}
                     alt="Gambar soal" className="mt-3 max-h-48 rounded-lg object-contain" />
                 )}
               </div>
@@ -120,7 +127,7 @@ export const ExamReviewModal = ({ tryoutId, tryoutTitle, onClose }: { tryoutId: 
               {/* Options */}
               {(!q.question_type || q.question_type === 'MULTIPLE_CHOICE' || q.question_type === 'MULTIPLE_ANSWERS') && (
                 <div className="space-y-2">
-                  {(['a', 'b', 'c', 'd'] as const).map(opt => {
+                  {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => {
                     const text = q[`option_${opt}` as keyof ReviewItem] as string;
                     if (!text) return null;
                     return (
@@ -131,7 +138,16 @@ export const ExamReviewModal = ({ tryoutId, tryoutTitle, onClose }: { tryoutId: 
                           opt.toUpperCase() === q.student_answer?.toUpperCase() ? 'bg-red-500 text-white' :
                           'bg-white border border-current'
                         }`}>{getOptionIcon(opt, q)}</div>
-                        <span className="pt-0.5 text-sm">{text}</span>
+                        <div className="flex-1">
+                          <span className="pt-0.5 text-sm">{text}</span>
+                          {(q as any)[`option_${opt}_image`] && (
+                            <img 
+                              src={resolveImageUrl((q as any)[`option_${opt}_image` ] )} 
+                              alt={`Pilihan ${opt}`} 
+                              className="mt-2 max-h-32 rounded border border-slate-200 object-contain bg-white block" 
+                            />
+                          )}
+                        </div>
                       </div>
                     );
                   })}

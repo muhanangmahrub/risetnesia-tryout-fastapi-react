@@ -1,7 +1,6 @@
 from typing import Any, List, Optional
-import uuid
-import os
-import shutil
+import cloudinary
+import cloudinary.uploader
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.api import deps
@@ -9,8 +8,17 @@ from app.crud import crud_question
 from app.schemas.question import QuestionResponse, QuestionCreate, QuestionUpdate
 from app.models.user import User as UserModel
 from app.models.tryout import Question as QuestionModel
+from app.core.config import settings
 
 router = APIRouter()
+
+# Configure Cloudinary once on module load
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+    secure=True,
+)
 
 @router.get("/", response_model=List[QuestionResponse])
 def read_questions(
@@ -47,20 +55,27 @@ async def upload_question_image(
     current_user: UserModel = Depends(deps.get_current_active_tutor),
 ) -> Any:
     """
-    Upload an image for a question. Returns the URL of the uploaded image.
+    Upload an image for a question to Cloudinary. Returns the secure URL.
     """
     allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
-    _, ext = os.path.splitext(file.filename)
+    import os
+    _, ext = os.path.splitext(file.filename or "")
     if ext.lower() not in allowed_extensions:
-        raise HTTPException(status_code=400, detail="Invalid image extension")
-        
-    filename = f"{uuid.uuid4().hex}{ext.lower()}"
-    file_path = os.path.join("static", filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-        
-    return {"url": f"/static/{filename}"}
+        raise HTTPException(status_code=400, detail="Invalid image extension. Allowed: jpg, jpeg, png, gif, webp")
+
+    if not settings.CLOUDINARY_CLOUD_NAME:
+        raise HTTPException(status_code=500, detail="Cloud storage is not configured on this server.")
+
+    try:
+        contents = await file.read()
+        result = cloudinary.uploader.upload(
+            contents,
+            folder="tryout-risetnesia/questions",
+            resource_type="image",
+        )
+        return {"url": result["secure_url"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
 
 @router.put("/{id}", response_model=QuestionResponse)
 def update_question(

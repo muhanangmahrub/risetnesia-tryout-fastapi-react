@@ -5,15 +5,15 @@ services:
     image: postgres:15-alpine
     container_name: postgres_db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=YourStrongPassword123!
-      - POSTGRES_DB=tryout_db
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-YourStrongPassword123!}
+      - POSTGRES_DB=${DB_NAME:-tryout_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tryout_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-tryout_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,11 +29,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:YourStrongPassword123!@postgres_db:5432/tryout_db
-      - JWT_SECRET=supersecretkeythatyoushouldchangeinproduction
-      - DB_SERVER=postgres_db
-      - DB_USER=postgres
-      - DB_PASSWORD=YourStrongPassword123!
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_SERVER=${DB_SERVER:-postgres_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-YourStrongPassword123!}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     depends_on:
       postgres_db:
         condition: service_healthy

@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Online Tryout System API"
@@ -6,9 +7,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkeythatyoushouldchangeinproduction"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    
+
     # DATABASE
-    DATABASE_URL: str = "mssql+pyodbc://sa:YourStrongPassword123!@SQL_Server_Docker:1433/tryout_db?driver=ODBC+Driver+17+for+SQL+Server"
+    DATABASE_URL: str = "postgresql://postgres:YourStrongPassword123!@postgres_db:5432/tryout_db"
+
+    # CLOUDINARY
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
 
     class Config:
         env_file = ".env"

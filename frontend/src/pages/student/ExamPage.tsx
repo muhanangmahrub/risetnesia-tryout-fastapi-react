@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardBody } from '../../components/ui/Card';
 import { AlertCircle, Clock } from 'lucide-react';
 import { MathRenderer } from '../../components/ui/MathRenderer';
+import { resolveImageUrl } from '../../utils/url';
 
 export const ExamPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -162,7 +163,7 @@ export const ExamPage = () => {
                 {currentQuestion.image_url && (
                   <div className="mb-6">
                     <img
-                      src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${currentQuestion.image_url}`}
+                      src={resolveImageUrl(currentQuestion.image_url)}
                       alt="Gambar soal"
                       className="max-h-72 rounded-lg border border-slate-200 object-contain mx-auto"
                     />
@@ -185,7 +186,7 @@ export const ExamPage = () => {
 
                   {/* MULTIPLE_CHOICE */}
                   {(!currentQuestion.question_type || currentQuestion.question_type === 'MULTIPLE_CHOICE') && (
-                    ['A', 'B', 'C', 'D'].map((opt) => {
+                    ['A', 'B', 'C', 'D', 'E'].map((opt) => {
                       const optionText = currentQuestion[`option_${opt.toLowerCase()}` as keyof typeof currentQuestion];
                       const isSelected = answers[currentQuestion.id] === opt;
                       return (
@@ -207,7 +208,7 @@ export const ExamPage = () => {
                             {optionText && <div className={(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] ? 'mb-2' : ''}>{optionText as string}</div>}
                             {(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] && (
                               <img 
-                                src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${(currentQuestion as any)[`option_${opt.toLowerCase()}_image`]}`}
+                                src={resolveImageUrl((currentQuestion as any)[`option_${opt.toLowerCase()}_image` ] )}
                                 alt={`Pilihan ${opt}`}
                                 className="max-h-40 rounded border border-slate-200 object-contain bg-white"
                               />
@@ -222,7 +223,7 @@ export const ExamPage = () => {
                   {currentQuestion.question_type === 'MULTIPLE_ANSWERS' && (
                     <div className="space-y-3">
                       <p className="text-sm text-slate-500 italic">Pilih semua jawaban yang benar (bisa lebih dari satu)</p>
-                      {['A', 'B', 'C', 'D'].map((opt) => {
+                      {['A', 'B', 'C', 'D', 'E'].map((opt) => {
                         const optionText = currentQuestion[`option_${opt.toLowerCase()}` as keyof typeof currentQuestion];
                         const selected = (answers[currentQuestion.id] || '').split(',').map((s: string) => s.trim()).filter(Boolean);
                         const isSelected = selected.includes(opt);
@@ -249,7 +250,7 @@ export const ExamPage = () => {
                               {optionText && <div className={(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] ? 'mb-2' : ''}>{optionText as string}</div>}
                               {(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] && (
                                 <img 
-                                  src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${(currentQuestion as any)[`option_${opt.toLowerCase()}_image`]}`}
+                                  src={resolveImageUrl((currentQuestion as any)[`option_${opt.toLowerCase()}_image` ] )}
                                   alt={`Pilihan ${opt}`}
                                   className="mt-1 max-h-40 rounded border border-slate-200 object-contain bg-white"
                                 />

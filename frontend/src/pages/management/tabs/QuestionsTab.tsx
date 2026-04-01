@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { RichTextEditor } from '../../../components/ui/RichTextEditor';
 import { MathRenderer } from '../../../components/ui/MathRenderer';
 import { BookOpen, Edit2, Trash2, X, Eye, Plus, Upload, CheckCircle2 } from 'lucide-react';
+import { resolveImageUrl } from '../../../utils/url';
 
 const stripHtml = (html: string) => {
   return html
@@ -405,7 +406,7 @@ export const QuestionsTab = () => {
                     <Button size="sm" variant="secondary" onClick={() => imgInputRef.current?.click()} isLoading={uploadingImage}><Upload size={14} className="mr-2" /> Upload Gambar</Button>
                     {qForm.image_url && (<div className="flex items-center gap-2 text-sm text-brand-600 bg-brand-50 px-3 py-1 rounded">Gambar Terupload <button onClick={() => setQForm({ ...qForm, image_url: '' })} className="text-red-500 hover:text-red-700"><X size={14} /></button></div>)}
                   </div>
-                  {qForm.image_url && <img src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + qForm.image_url.replace('/api/v1', '')} alt="Soal" className="mt-2 h-32 object-contain rounded border" />}
+                  {qForm.image_url && <img src={resolveImageUrl(qForm.image_url)} alt="Soal" className="mt-2 h-32 object-contain rounded border" />}
                 </div>
                 
                 {/* ---- MULTIPLE_CHOICE ---- */}
@@ -448,7 +449,7 @@ export const QuestionsTab = () => {
                           </div>
                           {(qForm as any)[`option_${opt}_image`] && (
                             <img 
-                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              src={resolveImageUrl((qForm as any)[`option_${opt}_image` ] )} 
                               alt={`Pilihan ${opt}`} 
                               className="mt-2 h-20 object-contain rounded border bg-white" 
                             />
@@ -503,7 +504,7 @@ export const QuestionsTab = () => {
                           </div>
                           {(qForm as any)[`option_${opt}_image`] && (
                             <img 
-                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              src={resolveImageUrl((qForm as any)[`option_${opt}_image` ] )} 
                               alt={`Pilihan ${opt}`} 
                               className="mt-2 h-20 object-contain rounded border bg-white" 
                             />
@@ -609,7 +610,7 @@ export const QuestionsTab = () => {
               <div>
                 <h4 className="font-bold text-slate-700 mb-2">Pertanyaan:</h4>
                 <MathRenderer html={detailQuestion.question_text} className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-slate-800" />
-                {detailQuestion.image_url && <img src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + detailQuestion.image_url.replace('/api/v1', '')} alt="Soal" className="mt-4 max-h-64 object-contain rounded-lg border" />}
+                {detailQuestion.image_url && <img src={resolveImageUrl(detailQuestion.image_url)} alt="Soal" className="mt-4 max-h-64 object-contain rounded-lg border" />}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
@@ -621,7 +622,7 @@ export const QuestionsTab = () => {
                     </div>
                     {(detailQuestion as any)[`option_${opt}_image`] && (
                       <img 
-                        src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (detailQuestion as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                        src={resolveImageUrl((detailQuestion as any)[`option_${opt}_image` ] )} 
                         alt={`Gambar Pilihan ${opt.toUpperCase()}`} 
                         className="max-h-32 object-contain rounded border self-start bg-white"
                       />
@@ -739,7 +740,7 @@ export const QuestionsTab = () => {
                           </div>
                           {(qForm as any)[`option_${opt}_image`] && (
                             <img 
-                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              src={resolveImageUrl((qForm as any)[`option_${opt}_image` ] )} 
                               alt={`Pilihan ${opt}`} 
                               className="mt-2 h-20 object-contain rounded border bg-white" 
                             />
@@ -792,7 +793,7 @@ export const QuestionsTab = () => {
                           </div>
                           {(qForm as any)[`option_${opt}_image`] && (
                             <img 
-                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              src={resolveImageUrl((qForm as any)[`option_${opt}_image` ] )} 
                               alt={`Pilihan ${opt}`} 
                               className="mt-2 h-20 object-contain rounded border bg-white" 
                             />
