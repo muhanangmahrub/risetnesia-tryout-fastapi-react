@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     # DATABASE
-    DATABASE_URL: str = "postgresql://postgres:YourStrongPassword123!@postgres_db:5432/tryout_db"
+    DATABASE_URL: str = ""
 
     # CLOUDINARY
     CLOUDINARY_CLOUD_NAME: Optional[str] = None
