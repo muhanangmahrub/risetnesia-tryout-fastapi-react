@@ -9,6 +9,26 @@ from app.database import base
 # Create tables
 base.Base.metadata.create_all(bind=engine)
 
+@app.on_event("startup")
+def create_initial_admin():
+    from app.database.session import SessionLocal
+    from app.crud import crud_user
+    from app.schemas.user import UserCreate
+    
+    db = SessionLocal()
+    email = "muhanangmahrub@gmail.com"
+    user = crud_user.get_by_email(db, email=email)
+    if not user:
+        user_in = UserCreate(
+            email=email,
+            password="AdminPassword123!",
+            name="Muhamad Anang Mahrub",
+            role="admin"
+        )
+        crud_user.create(db, obj_in=user_in)
+        print(f"✅ Admin user {email} created during startup.")
+    db.close()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
