@@ -34,7 +34,7 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
 
   // Mutations
   const createClassMutation = useMutation({
-    mutationFn: async (data: any) => (await api.post('/classes/', data)).data,
+    mutationFn: async (data: any) => (await api.post('/classes', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       setIsCreatingClass(false);

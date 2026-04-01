@@ -56,7 +56,7 @@ export const QuestionsTab = () => {
 
   // Category Mutations
   const createCategoryMutation = useMutation({
-    mutationFn: async (data: any) => (await api.post('/categories/', data)).data,
+    mutationFn: async (data: any) => (await api.post('/categories', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setIsCreatingCategory(false);
@@ -87,7 +87,7 @@ export const QuestionsTab = () => {
 
   // Question Mutations
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: any) => (await api.post('/questions/', data)).data,
+    mutationFn: async (data: any) => (await api.post('/questions', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       setIsCreatingQuestion(false);

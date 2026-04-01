@@ -66,7 +66,7 @@ export const AdminDashboard = () => {
 
   const createUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post('/users/', data);
+      const res = await api.post('/users', data);
       return res.data;
     },
     onSuccess: () => {
@@ -79,7 +79,7 @@ export const AdminDashboard = () => {
 
   const createClassMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post('/classes/', data);
+      const res = await api.post('/classes', data);
       return res.data;
     },
     onSuccess: () => {
@@ -92,7 +92,7 @@ export const AdminDashboard = () => {
 
   const createTryoutMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await api.post('/tryouts/', data);
+      const res = await api.post('/tryouts', data);
       return res.data;
     },
     onSuccess: () => {

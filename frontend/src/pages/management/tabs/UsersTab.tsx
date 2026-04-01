@@ -22,7 +22,7 @@ export const UsersTab = ({ isAdmin }: { isAdmin: boolean }) => {
 
   // Mutations
   const createUserMutation = useMutation({
-    mutationFn: async (data: any) => (await api.post('/users/', data)).data,
+    mutationFn: async (data: any) => (await api.post('/users', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsCreatingUser(false);
