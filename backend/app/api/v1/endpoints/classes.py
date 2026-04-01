@@ -32,8 +32,7 @@ def create_class(
     """
     Create new class.
     """
-    # Just assign None or admin as tutor for now, can be updated later
-    new_class = crud_class.create(db, obj_in=class_in)
+    new_class = crud_class.create(db, obj_in=class_in, tutor_id=class_in.tutor_id)
     return new_class
 
 @router.post("/{class_id}/enroll/{student_id}")

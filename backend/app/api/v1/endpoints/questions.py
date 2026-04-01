@@ -25,7 +25,7 @@ def read_questions(
     """
     query = db.query(QuestionModel)
     if category_id is not None:
-        query = query.filter(QuestionModel.category_id == category_id)
+        query = query.filter(QuestionModel.categories.any(id=category_id))
     return query.order_by(QuestionModel.id.asc()).offset(skip).limit(limit).all()
 
 @router.post("/", response_model=QuestionResponse)

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../services/api';
 import { CardHeader, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Edit2, Trash2, Eye, BookOpen, X } from 'lucide-react';
+import { Edit2, Trash2, Eye, X } from 'lucide-react';
 
 const stripHtml = (html: string) => {
   return html
@@ -23,6 +23,9 @@ export const TryoutsTab = () => {
   const [tForm, setTForm] = useState({ title: '', duration_minutes: 120 });
   const [managingQuestionsTryoutId, setManagingQuestionsTryoutId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [qSearch, setQSearch] = useState('');
+  const [qSubject, setQSubject] = useState('');
+  const [qDifficulty, setQDifficulty] = useState('');
 
   const { data: tryouts, isLoading: tryoutsLoading } = useQuery({
     queryKey: ['tryouts'],
@@ -71,6 +74,25 @@ export const TryoutsTab = () => {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tryouts'] })
   });
+  
+  const bulkAssignMutation = useMutation({
+    mutationFn: async (params: { tId: number; qIds: number[]; action: 'add' | 'remove' }) => {
+      await api.post(`/tryouts/${params.tId}/questions/bulk`, {
+        question_ids: params.qIds,
+        action: params.action
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tryouts'] })
+  });
+  
+  const subjects = Array.from(new Set(questions?.map((q: any) => q.subject).filter(Boolean) || [])) as string[];
+
+  const filteredQuestions = questions?.filter((q: any) => {
+    const matchesSearch = !qSearch || stripHtml(q.question_text).toLowerCase().includes(qSearch.toLowerCase()) || (q.subject && q.subject.toLowerCase().includes(qSearch.toLowerCase()));
+    const matchesSubject = !qSubject || q.subject === qSubject;
+    const matchesDifficulty = !qDifficulty || q.difficulty === qDifficulty;
+    return matchesSearch && matchesSubject && matchesDifficulty;
+  });
 
   return (
     <>
@@ -85,35 +107,92 @@ export const TryoutsTab = () => {
       <CardBody>
         {managingQuestionsTryoutId ? (
           <div>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <div>
-                <h3 className="text-md font-bold text-slate-800">
-                  {tryouts?.find((t: any) => t.id === managingQuestionsTryoutId)?.title}
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                  <BookOpen size={12} /> Pilih soal dari folder di bawah ini untuk ditambahkan ke paket.
-                </p>
+            <div className="flex flex-col lg:flex-row items-center gap-3 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <div className="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                    {tryouts?.find((t: any) => t.id === managingQuestionsTryoutId)?.title}
+                  </h3>
+                  <span className="bg-brand-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm shadow-brand-200 whitespace-nowrap">
+                    {tryouts?.find((t: any) => t.id === managingQuestionsTryoutId)?.questions?.length || 0} Soal Terpilih
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-200">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Filter Folder:</label>
-                <select 
-                  className="text-sm font-medium text-slate-700 bg-transparent focus:outline-none min-w-[150px]"
-                  value={selectedCategoryId || ''} 
-                  onChange={(e) => setSelectedCategoryId(e.target.value ? parseInt(e.target.value) : null)}
-                >
-                  <option value="">Semua Folder</option>
-                  {categories?.map((cat: any) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+
+              <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                {/* SEARCH */}
+                <div className="relative group">
+                  <input 
+                    type="text" 
+                    placeholder="Cari soal/mapel..." 
+                    className="w-full pl-7 pr-2 h-8 text-[11px] border border-slate-200 rounded-lg focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none bg-white font-medium"
+                    value={qSearch}
+                    onChange={(e) => setQSearch(e.target.value)}
+                  />
+                  <Eye size={12} className="absolute left-2 top-2.5 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none" />
+                </div>
+
+                {/* FOLDER */}
+                <div className="bg-white border border-slate-200 rounded-lg px-2 h-8 flex items-center">
+                  <select 
+                    className="text-[11px] font-medium text-slate-600 bg-transparent focus:outline-none w-full"
+                    value={selectedCategoryId || ''} 
+                    onChange={(e) => setSelectedCategoryId(e.target.value ? parseInt(e.target.value) : null)}
+                  >
+                    <option value="">📁 Semua Folder</option>
+                    {categories?.map((cat: any) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* MAPEL */}
+                <div className="bg-white border border-slate-200 rounded-lg px-2 h-8 flex items-center">
+                  <select 
+                    className="text-[11px] font-medium text-slate-600 bg-transparent focus:outline-none w-full"
+                    value={qSubject} 
+                    onChange={(e) => setQSubject(e.target.value)}
+                  >
+                    <option value="">📚 Semua Mapel</option>
+                    {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                {/* KESULITAN */}
+                <div className="bg-white border border-slate-200 rounded-lg px-2 h-8 flex items-center">
+                  <select 
+                    className="text-[11px] font-medium text-slate-600 bg-transparent focus:outline-none w-full"
+                    value={qDifficulty} 
+                    onChange={(e) => setQDifficulty(e.target.value)}
+                  >
+                    <option value="">⚡ Semua Level</option>
+                    <option value="Easy">Mudah</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Hard">Sulit</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto border border-slate-100 rounded-xl bg-white shadow-sm">
+            <div className="max-h-[60vh] overflow-y-auto border border-slate-100 rounded-xl bg-white shadow-sm custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="border-b bg-slate-50/50 text-slate-500">
-                    <th className="p-4 font-semibold uppercase tracking-wider text-[10px] w-16">Pilih</th>
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                  <tr className="border-b bg-slate-50/80 text-slate-500">
+                    <th className="p-4 font-semibold uppercase tracking-wider text-[10px] w-16">
+                      <div className="flex flex-col items-center gap-1 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                          checked={filteredQuestions?.length > 0 && filteredQuestions.every((q: any) => tryouts?.find((t: any) => t.id === managingQuestionsTryoutId)?.questions?.some((tQ: any) => tQ.id === q.id))}
+                          onChange={(e) => {
+                            const tId = managingQuestionsTryoutId!;
+                            const qIds = filteredQuestions?.map((q: any) => q.id) || [];
+                            bulkAssignMutation.mutate({ tId, qIds, action: e.target.checked ? 'add' : 'remove' });
+                          }}
+                        />
+                        <span className="text-[8px] whitespace-nowrap">Semua</span>
+                      </div>
+                    </th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-[10px]">Isi Soal</th>
                     <th className="p-4 font-semibold uppercase tracking-wider text-[10px]">Mata Pelajaran</th>
                   </tr>
@@ -121,10 +200,10 @@ export const TryoutsTab = () => {
                 <tbody className="divide-y divide-slate-50">
                   {qLoading ? (
                     <tr><td colSpan={3} className="p-10 text-center text-slate-400 italic">Memuat soal...</td></tr>
-                  ) : (questions?.length || 0) === 0 ? (
+                  ) : (filteredQuestions?.length || 0) === 0 ? (
                     <tr><td colSpan={3} className="p-10 text-center text-slate-400 italic">Tidak ada soal ditemukan.</td></tr>
                   ) : (
-                    questions?.map((q: any) => {
+                    filteredQuestions?.map((q: any) => {
                       const tryoutData = tryouts?.find((t: any) => t.id === managingQuestionsTryoutId);
                       const isIncluded = tryoutData?.questions?.some((tQ: any) => tQ.id === q.id);
                       return (

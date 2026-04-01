@@ -73,11 +73,20 @@ export const UsersTab = ({ isAdmin }: { isAdmin: boolean }) => {
             <Button size="sm" onClick={() => setIsCreatingUser(true)}><Plus size={16} className="mr-2" /> Tambah User</Button>
           </div>
         </CardHeader>
-        <CardBody>
+        <CardBody className="p-0">
           {usersLoading ? <div className="text-center py-8">Memuat pengguna...</div> : (
-            <div className="overflow-x-auto">
+            <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm">
-                <thead><tr className="border-b border-slate-200 bg-slate-50 text-slate-600"><th className="p-4 font-medium">ID</th><th className="p-4 font-medium">Nama</th><th className="p-4 font-medium">Email</th><th className="p-4 font-medium">Role</th><th className="p-4 font-medium">Bergabung</th><th className="p-4 font-medium">Aksi</th></tr></thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-600">
+                    <th className="p-4 font-medium">ID</th>
+                    <th className="p-4 font-medium">Nama</th>
+                    <th className="p-4 font-medium">Email</th>
+                    <th className="p-4 font-medium">Role</th>
+                    <th className="p-4 font-medium">Bergabung</th>
+                    <th className="p-4 font-medium">Aksi</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {users?.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-500">Belum ada pengguna.</td></tr>}
                   {users?.map((u: any) => (

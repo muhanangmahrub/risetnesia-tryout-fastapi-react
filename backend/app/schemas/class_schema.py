@@ -7,7 +7,7 @@ class ClassBase(BaseModel):
 
 # Properties to receive on item creation
 class ClassCreate(ClassBase):
-    pass
+    tutor_id: Optional[int] = None
 
 # Properties to receive on item update
 class ClassUpdate(ClassBase):

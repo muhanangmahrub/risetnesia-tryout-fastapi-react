@@ -23,9 +23,6 @@ def update(db: Session, *, db_obj: Tryout, obj_in: TryoutUpdate) -> Tryout:
     for field in update_data:
         setattr(db_obj, field, update_data[field])
         
-    if db_obj.start_time and db_obj.duration_minutes:
-        db_obj.end_time = db_obj.start_time + timedelta(minutes=db_obj.duration_minutes)
-        
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
@@ -41,6 +38,21 @@ def remove_question(db: Session, *, tryout: Tryout, question: Question) -> Tryou
     if question in tryout.questions:
         tryout.questions.remove(question)
         db.commit()
+    return tryout
+
+def bulk_assign_questions(db: Session, *, tryout: Tryout, question_ids: List[int], action: str) -> Tryout:
+    questions = db.query(Question).filter(Question.id.in_(question_ids)).all()
+    if action == 'add':
+        existent_ids = {q.id for q in tryout.questions}
+        for q in questions:
+            if q.id not in existent_ids:
+                tryout.questions.append(q)
+    elif action == 'remove':
+        q_map = {q.id: q for q in questions}
+        tryout.questions = [q for q in tryout.questions if q.id not in q_map]
+    
+    db.commit()
+    db.refresh(tryout)
     return tryout
 
 def delete(db: Session, *, id: int) -> Tryout:

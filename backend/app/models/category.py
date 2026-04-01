@@ -11,4 +11,4 @@ class QuestionCategory(Base):
     description = Column(String(500), nullable=True)
 
     # Relationships
-    questions = relationship("Question", back_populates="category")
+    questions = relationship("Question", secondary="question_category_association", back_populates="categories")

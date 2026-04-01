@@ -203,7 +203,16 @@ export const ExamPage = () => {
                           }`}>
                             {opt}
                           </div>
-                          <div className="pt-0.5">{optionText as string}</div>
+                          <div className="pt-0.5 flex-1">
+                            {optionText && <div className={(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] ? 'mb-2' : ''}>{optionText as string}</div>}
+                            {(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] && (
+                              <img 
+                                src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${(currentQuestion as any)[`option_${opt.toLowerCase()}_image`]}`}
+                                alt={`Pilihan ${opt}`}
+                                className="max-h-40 rounded border border-slate-200 object-contain bg-white"
+                              />
+                            )}
+                          </div>
                         </div>
                       );
                     })
@@ -236,7 +245,16 @@ export const ExamPage = () => {
                             }`}>
                               {isSelected ? '✓' : opt}
                             </div>
-                            <div className="pt-0.5">{optionText as string}</div>
+                            <div className="pt-0.5 flex-1">
+                              {optionText && <div className={(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] ? 'mb-2' : ''}>{optionText as string}</div>}
+                              {(currentQuestion as any)[`option_${opt.toLowerCase()}_image`] && (
+                                <img 
+                                  src={`${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}${(currentQuestion as any)[`option_${opt.toLowerCase()}_image`]}`}
+                                  alt={`Pilihan ${opt}`}
+                                  className="mt-1 max-h-40 rounded border border-slate-200 object-contain bg-white"
+                                />
+                              )}
+                            </div>
                           </div>
                         );
                       })}

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.crud import crud_tryout, crud_question
-from app.schemas.tryout import TryoutResponse, TryoutCreate, TryoutUpdate
+from app.schemas.tryout import TryoutResponse, TryoutCreate, TryoutUpdate, BulkQuestionAssignment
 from app.models.user import User as UserModel
 from app.models.tryout import Tryout as TryoutModel
 
@@ -44,6 +44,29 @@ def create_tryout(
     Create new tryout.
     """
     tryout = crud_tryout.create(db, obj_in=tryout_in)
+    return tryout
+
+@router.post("/{tryout_id}/questions/bulk", response_model=TryoutResponse)
+def bulk_assign_questions_to_tryout(
+    *,
+    db: Session = Depends(deps.get_db),
+    tryout_id: int,
+    assignment: BulkQuestionAssignment,
+    current_user: UserModel = Depends(deps.get_current_active_tutor),
+) -> Any:
+    """
+    Add or remove multiple questions from a tryout.
+    """
+    tryout = crud_tryout.get(db, id=tryout_id)
+    if not tryout:
+        raise HTTPException(status_code=404, detail="Tryout not found")
+    
+    tryout = crud_tryout.bulk_assign_questions(
+        db, 
+        tryout=tryout, 
+        question_ids=assignment.question_ids, 
+        action=assignment.action
+    )
     return tryout
 
 @router.post("/{tryout_id}/questions/{question_id}", response_model=TryoutResponse)

@@ -29,3 +29,7 @@ class TryoutInDBBase(TryoutBase):
 class TryoutResponse(TryoutInDBBase):
     questions: List[QuestionResponse] = []
     class_id: Optional[int] = None
+
+class BulkQuestionAssignment(BaseModel):
+    question_ids: List[int]
+    action: str  # 'add' or 'remove'

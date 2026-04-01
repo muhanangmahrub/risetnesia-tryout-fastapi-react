@@ -55,9 +55,9 @@ export const AnalyticsTab = () => {
                 </div>
                 <div>
                   <h3 className="text-md font-semibold text-slate-800 mb-4">Peringkat Siswa</h3>
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                     {[...analyticsData].sort((a: any, b: any) => b.score - a.score).map((result: any, index: number) => (
-                      <div key={result.id} className="flex items-center gap-4">
+                      <div key={result.id} className="flex items-center gap-4 py-1 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors rounded-lg px-2">
                         <div className="w-8 text-right font-semibold text-slate-400">#{index + 1}</div>
                         <div className="w-48 truncate text-sm font-medium text-slate-800 flex items-center gap-2">
                           {result.student?.name || 'Siswa'}

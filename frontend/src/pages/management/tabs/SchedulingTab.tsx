@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../services/api';
 import { Card, CardHeader, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Download } from 'lucide-react';
 
 const correctUTC = (dateStr: string | null) => {
   if (!dateStr) return null;
@@ -34,6 +33,7 @@ export const SchedulingTab = ({ isAdmin }: { isAdmin: boolean }) => {
   const queryClient = useQueryClient();
   const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
   const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
   const [editClassId, setEditClassId] = useState<number | null>(null);
 
   const { data: tryouts, isLoading: tryoutsLoading } = useQuery({
@@ -56,20 +56,7 @@ export const SchedulingTab = ({ isAdmin }: { isAdmin: boolean }) => {
     onError: (e: any) => alert(e.response?.data?.detail || 'Error scheduling tryout')
   });
 
-  const handleExportExcel = async (tryoutId: number) => {
-    try {
-      const res = await api.get(`/results/export/${tryoutId}`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `hasil_tryout_${tryoutId}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      alert('Gagal mengekspor data');
-    }
-  };
+
 
   if (!isAdmin) return null;
 
@@ -98,13 +85,22 @@ export const SchedulingTab = ({ isAdmin }: { isAdmin: boolean }) => {
                           </select>
                         </td>
                         <td className="p-4">
+                          <label className="block text-[10px] text-slate-400 mb-1">Mulai:</label>
                           <input 
                             type="datetime-local" 
-                            className="border rounded p-1 w-full" 
+                            className="border rounded p-1 w-full text-xs" 
                             value={editStartTime} 
                             onChange={(e) => setEditStartTime(e.target.value)} 
                           />
-                          <div className="text-[10px] text-slate-400 mt-1 italic">Waktu selesai otomatis (+{t.duration_minutes}m)</div>
+                        </td>
+                        <td className="p-4">
+                          <label className="block text-[10px] text-slate-400 mb-1">Selesai:</label>
+                          <input 
+                            type="datetime-local" 
+                            className="border rounded p-1 w-full text-xs" 
+                            value={editEndTime} 
+                            onChange={(e) => setEditEndTime(e.target.value)} 
+                          />
                         </td>
                       </>
                     ) : (
@@ -118,9 +114,9 @@ export const SchedulingTab = ({ isAdmin }: { isAdmin: boolean }) => {
                       {editingScheduleId === t.id ? (
                         <div className="flex gap-2">
                           <Button size="sm" isLoading={updateScheduleMutation.isPending} onClick={() => {
-                            const start = new Date(editStartTime);
-                            const end = new Date(start.getTime() + (t.duration_minutes * 60000)).toISOString();
-                            updateScheduleMutation.mutate({ id: t.id, start: start.toISOString(), end, classId: editClassId });
+                            const start = new Date(editStartTime).toISOString();
+                            const end = new Date(editEndTime).toISOString();
+                            updateScheduleMutation.mutate({ id: t.id, start, end, classId: editClassId });
                           }}>Simpan</Button>
                           <Button size="sm" variant="secondary" onClick={() => setEditingScheduleId(null)}>Batal</Button>
                         </div>
@@ -129,9 +125,9 @@ export const SchedulingTab = ({ isAdmin }: { isAdmin: boolean }) => {
                           <Button size="sm" variant="secondary" onClick={() => { 
                             setEditingScheduleId(t.id); 
                             setEditStartTime(toLocalISO(t.start_time));
+                            setEditEndTime(toLocalISO(t.end_time));
                             setEditClassId(t.class_id ?? null); 
                           }}>Atur Jadwal & Kelas</Button>
-                          <Button size="sm" variant="secondary" onClick={() => handleExportExcel(t.id)}><Download size={14} className="mr-1" /> Export</Button>
                         </div>
                       )}
                     </td>

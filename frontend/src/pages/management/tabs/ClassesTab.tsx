@@ -11,7 +11,7 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
   // Classes state
   const [isCreatingClass, setIsCreatingClass] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
-  const [cForm, setCForm] = useState({ name: '' });
+  const [cForm, setCForm] = useState({ name: '', tutor_id: null as number | null });
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [newStudentId, setNewStudentId] = useState('');
 
@@ -38,7 +38,7 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       setIsCreatingClass(false);
-      setCForm({ name: '' });
+      setCForm({ name: '', tutor_id: null });
     },
     onError: (e: any) => alert(e.response?.data?.detail || 'Error creating class')
   });
@@ -82,23 +82,41 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
           <h2 className="text-lg font-semibold text-slate-800">Manajemen Kelas</h2>
           <Button size="sm" onClick={() => setIsCreatingClass(true)}><Plus size={16} className="mr-2" /> Buat Kelas</Button>
         </CardHeader>
-        <CardBody>
+        <CardBody className="p-0">
           {classesLoading ? <div className="text-center py-8">Memuat kelas...</div> : (
-            <div className="overflow-x-auto">
+            <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-sm">
-                <thead><tr className="border-b border-slate-200 bg-slate-50 text-slate-600"><th className="p-4 font-medium">ID</th><th className="p-4 font-medium">Nama Kelas</th><th className="p-4 font-medium">Tutor ID</th><th className="p-4 font-medium">Aksi</th></tr></thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-600">
+                    <th className="p-4 font-medium">ID</th>
+                    <th className="p-4 font-medium">Nama Kelas</th>
+                    <th className="p-4 font-medium">Tutor</th>
+                    <th className="p-4 font-medium">Aksi</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {classes?.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-slate-500">Belum ada kelas.</td></tr>}
-                  {classes?.map((c: any) => (
-                    <React.Fragment key={c.id}>
-                      <tr className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="p-4 text-slate-500">#{c.id}</td>
-                        <td className="p-4 font-medium text-slate-900">{c.name}</td>
-                        <td className="p-4 text-slate-600">{c.tutor_id || 'Unassigned'}</td>
+                  {classes?.map((c: any) => {
+                    const tutor = users?.find((u: any) => u.id === c.tutor_id);
+                    return (
+                      <React.Fragment key={c.id}>
+                        <tr className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="p-4 text-slate-500">#{c.id}</td>
+                          <td className="p-4 font-medium text-slate-900">{c.name}</td>
+                          <td className="p-4 text-slate-600">
+                            {tutor ? (
+                              <div className="flex flex-col">
+                                <span className="font-medium text-slate-900">{tutor.name}</span>
+                                <span className="text-[10px] text-slate-500">{tutor.email}</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic">Belum ditentukan</span>
+                            )}
+                          </td>
                         <td className="p-4">
                           <div className="flex gap-2">
                             <Button size="sm" variant="secondary" onClick={() => setSelectedClassId(selectedClassId === c.id ? null : c.id)}>{selectedClassId === c.id ? 'Sembunyikan' : 'Kelola Siswa'}</Button>
-                            <button onClick={() => { setEditingClass(c); setCForm({ name: c.name }); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><Edit2 size={16} /></button>
+                            <button onClick={() => { setEditingClass(c); setCForm({ name: c.name, tutor_id: c.tutor_id }); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><Edit2 size={16} /></button>
                             <button onClick={() => confirm('Hapus kelas ini?') && deleteClassMutation.mutate(c.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><Trash2 size={16} /></button>
                           </div>
                         </td>
@@ -135,7 +153,8 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
                         </td></tr>
                       )}
                     </React.Fragment>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>
@@ -150,7 +169,23 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
             <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Buat Kelas</h3>
               <button onClick={() => setIsCreatingClass(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button></div>
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Kelas</label><input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={cForm.name} onChange={(e) => setCForm({ name: e.target.value })} /></div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Kelas</label>
+                <input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={cForm.name} onChange={(e) => setCForm({ ...cForm, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Tutor</label>
+                <select 
+                  className="w-full border border-slate-300 rounded px-3 py-2 bg-white" 
+                  value={cForm.tutor_id || ''} 
+                  onChange={(e) => setCForm({ ...cForm, tutor_id: e.target.value ? parseInt(e.target.value) : null })}
+                >
+                  <option value="">-- Tanpa Tutor --</option>
+                  {users?.filter((u: any) => u.role === 'tutor').map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
               <Button className="w-full" isLoading={createClassMutation.isPending} onClick={() => createClassMutation.mutate(cForm)}>Buat Kelas</Button>
             </div>
           </div>
@@ -164,7 +199,23 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
             <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Edit Kelas</h3>
               <button onClick={() => setEditingClass(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button></div>
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Nama Kelas</label><input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={cForm.name} onChange={(e) => setCForm({ name: e.target.value })} /></div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Kelas</label>
+                <input type="text" className="w-full border border-slate-300 rounded px-3 py-2" value={cForm.name} onChange={(e) => setCForm({ ...cForm, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Tutor</label>
+                <select 
+                  className="w-full border border-slate-300 rounded px-3 py-2 bg-white" 
+                  value={cForm.tutor_id || ''} 
+                  onChange={(e) => setCForm({ ...cForm, tutor_id: e.target.value ? parseInt(e.target.value) : null })}
+                >
+                  <option value="">-- Tanpa Tutor --</option>
+                  {users?.filter((u: any) => u.role === 'tutor').map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+              </div>
               <Button className="w-full" isLoading={updateClassMutation.isPending} onClick={() => updateClassMutation.mutate(cForm)}>Simpan Perubahan</Button>
             </div>
           </div>
