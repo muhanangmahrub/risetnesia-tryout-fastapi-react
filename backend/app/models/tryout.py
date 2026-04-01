@@ -12,28 +12,41 @@ tryout_questions = Table(
     Column("question_id", Integer, ForeignKey("questions.id")),
 )
 
+# Association table for questions to categories (folders)
+question_category_association = Table(
+    "question_category_association",
+    Base.metadata,
+    Column("question_id", Integer, ForeignKey("questions.id")),
+    Column("category_id", Integer, ForeignKey("question_categories.id")),
+)
+
 class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
     question_type = Column(String(50), default='MULTIPLE_CHOICE', nullable=False)
     question_text = Column(Text, nullable=False)
-    option_a = Column(String(255), nullable=True)
-    option_b = Column(String(255), nullable=True)
-    option_c = Column(String(255), nullable=True)
-    option_d = Column(String(255), nullable=True)
+    option_a = Column(Text, nullable=True)
+    option_a_image = Column(String(500), nullable=True)
+    option_b = Column(Text, nullable=True)
+    option_b_image = Column(String(500), nullable=True)
+    option_c = Column(Text, nullable=True)
+    option_c_image = Column(String(500), nullable=True)
+    option_d = Column(Text, nullable=True)
+    option_d_image = Column(String(500), nullable=True)
+    option_e = Column(Text, nullable=True)
+    option_e_image = Column(String(500), nullable=True)
     correct_answer = Column(Text, nullable=True)  # For essay match or A/B/C/D
     explanation = Column(Text, nullable=True)
     subject = Column(String(100), nullable=True)
     difficulty = Column(String(50), nullable=True)
     image_url = Column(String(500), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"))
-    category_id = Column(Integer, ForeignKey("question_categories.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     creator = relationship("User", back_populates="created_questions")
-    category = relationship("QuestionCategory", back_populates="questions")
+    categories = relationship("QuestionCategory", secondary=question_category_association, back_populates="questions")
     tryouts = relationship("Tryout", secondary=tryout_questions, back_populates="questions")
     answers = relationship("StudentAnswer", back_populates="question")
 

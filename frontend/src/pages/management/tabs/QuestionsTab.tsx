@@ -30,9 +30,14 @@ export const QuestionsTab = () => {
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [detailQuestion, setDetailQuestion] = useState<any>(null);
   const [qForm, setQForm] = useState({
-    question_type: 'MULTIPLE_CHOICE', question_text: '', option_a: '', option_b: '', option_c: '', option_d: '',
+    question_type: 'MULTIPLE_CHOICE', question_text: '', 
+    option_a: '', option_a_image: '',
+    option_b: '', option_b_image: '',
+    option_c: '', option_c_image: '',
+    option_d: '', option_d_image: '',
+    option_e: '', option_e_image: '',
     correct_answer: 'A', explanation: '', subject: '', difficulty: 'Normal', image_url: '',
-    category_id: null as number | null
+    category_ids: [] as number[]
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
@@ -64,6 +69,8 @@ export const QuestionsTab = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setEditingCategory(null);
+      setIsCreatingCategory(false);
+      setCatForm({ name: '', description: '' });
     },
     onError: (e: any) => alert(e.response?.data?.detail || 'Error updating category')
   });
@@ -79,14 +86,19 @@ export const QuestionsTab = () => {
 
   // Question Mutations
   const createQuestionMutation = useMutation({
-    mutationFn: async (data: any) => (await api.post('/questions', data)).data,
+    mutationFn: async (data: any) => (await api.post('/questions/', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       setIsCreatingQuestion(false);
       setQForm({ 
-        question_type: 'MULTIPLE_CHOICE', question_text: '', option_a: '', option_b: '', option_c: '', option_d: '', 
+        question_type: 'MULTIPLE_CHOICE', question_text: '', 
+        option_a: '', option_a_image: '',
+        option_b: '', option_b_image: '',
+        option_c: '', option_c_image: '',
+        option_d: '', option_d_image: '',
+        option_e: '', option_e_image: '',
         correct_answer: 'A', explanation: '', subject: '', difficulty: 'Normal', image_url: '',
-        category_id: selectedCategoryId 
+        category_ids: selectedCategoryId ? [selectedCategoryId] : [] 
       });
     },
     onError: (e: any) => alert(e.response?.data?.detail || 'Error creating question')
@@ -124,6 +136,19 @@ export const QuestionsTab = () => {
     }
   };
 
+  const handleOptionImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, option: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/questions/upload-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setQForm(prev => ({ ...prev, [`option_${option}_image`]: res.data.url }));
+    } catch { 
+      alert('Gagal upload gambar pilihan.'); 
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col md:flex-row min-h-[500px]">
@@ -142,12 +167,12 @@ export const QuestionsTab = () => {
             </button>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
             <button
               onClick={() => setSelectedCategoryId(null)}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                 selectedCategoryId === null 
-                  ? 'bg-brand-600 text-white shadow-md shadow-brand-200 font-semibold' 
+                  ? 'bg-brand-600 text-white shadow-md shadow-brand-200 font-semibold sticky top-0 z-10' 
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -170,7 +195,7 @@ export const QuestionsTab = () => {
                     {cat.name}
                   </button>
                   <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all gap-1">
-                    <button onClick={() => { setEditingCategory(cat); setCatForm({ name: cat.name, description: cat.description || '' }); }} className="p-1 text-slate-400 hover:text-brand-600" title="Ubah Nama"><Edit2 size={12} /></button>
+                    <button onClick={() => { setEditingCategory(cat); setCatForm({ name: cat.name, description: cat.description || '' }); setIsCreatingCategory(true); }} className="p-1 text-slate-400 hover:text-brand-600" title="Ubah Nama"><Edit2 size={12} /></button>
                     <button onClick={() => { if(confirm('Hapus kategori ini? Soal tidak akan terhapus.')) deleteCategoryMutation.mutate(cat.id) }} className="p-1 text-slate-400 hover:text-red-500" title="Hapus"><X size={14} /></button>
                   </div>
                 </div>
@@ -207,46 +232,149 @@ export const QuestionsTab = () => {
           <CardHeader className="flex justify-between items-center border-b border-slate-100">
             <div>
               <h2 className="text-lg font-bold text-slate-800">
-                {isCreatingQuestion ? 'Buat Soal Baru' : 
-                  selectedCategoryId 
+                {selectedCategoryId 
                     ? categories?.find((c: any) => c.id === selectedCategoryId)?.name 
                     : 'Semua Soal'
                 }
               </h2>
               <p className="text-xs text-slate-500">
-                {isCreatingQuestion ? 'Isi detail soal di bawah ini.' : `${questions?.length || 0} soal ditemukan`}
+                {`${questions?.length || 0} soal ditemukan`}
               </p>
             </div>
             <Button size="sm" onClick={() => {
-              setIsCreatingQuestion(!isCreatingQuestion);
-              if(!isCreatingQuestion) setQForm({...qForm, category_id: selectedCategoryId});
-            }} variant={isCreatingQuestion ? 'secondary' : 'primary'}>
-              {isCreatingQuestion ? 'Batal' : (
-                <span className="flex items-center gap-2"><Plus size={16} /> Buat Soal</span>
-              )}
+              setIsCreatingQuestion(true);
+              setEditingQuestion(null);
+              setDetailQuestion(null);
+              setQForm({
+                question_type: 'MULTIPLE_CHOICE', question_text: '', 
+                option_a: '', option_a_image: '',
+                option_b: '', option_b_image: '',
+                option_c: '', option_c_image: '',
+                option_d: '', option_d_image: '',
+                option_e: '', option_e_image: '',
+                correct_answer: 'A', explanation: '', subject: '', difficulty: 'Normal', image_url: '',
+                category_ids: selectedCategoryId ? [selectedCategoryId] : []
+              });
+            }} variant="primary">
+              <span className="flex items-center gap-2"><Plus size={16} /> Buat Soal</span>
             </Button>
           </CardHeader>
           
-          <CardBody className="flex-1 bg-white">
-            {isCreatingQuestion ? (
-              <div className="space-y-4 max-w-3xl">
+          <CardBody className="flex-1 bg-white p-0">
+            {qLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mb-4"></div>
+                <p>Memuat daftar soal...</p>
+              </div>
+            ) : (
+              <div className="max-h-[70vh] overflow-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                    <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-500">
+                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Isi Soal</th>
+                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Folder</th>
+                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Mata Pelajaran</th>
+                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Kesulitan</th>
+                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {questions?.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-20 text-center">
+                          <div className="flex flex-col items-center text-slate-400">
+                            <BookOpen size={48} className="mb-4 opacity-20" />
+                            <p className="text-lg font-medium text-slate-500">Belum ada soal di folder ini</p>
+                            <p className="text-sm">Klik "Buat Soal" untuk mulai menambahkan pertanyaan.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {questions?.map((q: any) => (
+                      <tr key={q.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
+                        <td className="p-4 font-medium text-slate-700 max-w-[200px] md:max-w-xs">
+                          <div className="truncate">{stripHtml(q.question_text)}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1">
+                            {q.categories?.length > 0 ? q.categories.map((cat: any) => (
+                              <span key={cat.id} className="bg-brand-50 text-brand-600 px-2 py-0.5 rounded text-[10px] font-medium border border-brand-100">{cat.name}</span>
+                            )) : <span className="text-slate-400 text-[10px] italic">Tanpa Folder</span>}
+                          </div>
+                        </td>
+                        <td className="p-4 text-slate-600">
+                          <span className="bg-slate-100 px-2 py-1 rounded text-xs">{q.subject || 'Umum'}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                            q.difficulty === 'Hard' ? 'bg-red-50 text-red-600' : 
+                            q.difficulty === 'Normal' ? 'bg-blue-50 text-blue-600' : 
+                            'bg-emerald-50 text-emerald-600'
+                          }`}>
+                            {q.difficulty || 'Normal'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-1">
+                            <button onClick={() => { setDetailQuestion(q); setEditingQuestion(null); setIsCreatingQuestion(false); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors" title="Detail"><Eye size={16} /></button>
+                            <button onClick={() => { 
+                              setEditingQuestion(q); 
+                              setIsCreatingQuestion(false); 
+                              setDetailQuestion(null); 
+                              setQForm({ 
+                                ...q, 
+                                question_type: q.question_type || 'MULTIPLE_CHOICE',
+                                category_ids: q.categories?.map((c: any) => c.id) || []
+                              }); 
+                            }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors" title="Edit"><Edit2 size={16} /></button>
+                            <button onClick={() => confirm('Hapus soal ini?') && deleteQuestionMutation.mutate(q.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Hapus"><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardBody>
+        </div>
+      </div>
+
+      {/* MODAL CREATE QUESTION */}
+      {isCreatingQuestion && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xl font-bold text-slate-800">Buat Soal Baru</h3>
+              <button onClick={() => setIsCreatingQuestion(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={24} /></button>
+            </div>
+            <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
-                    <input className="w-full border border-slate-300 rounded p-2" value={qForm.subject} onChange={(e) => setQForm({ ...qForm, subject: e.target.value })} placeholder="cth. Matematika" />
+                    <input className="w-full border border-slate-300 rounded p-2" value={qForm.subject} onChange={(e) => setQForm({ ...qForm, subject: e.target.value })} />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Folder / Kategori</label>
-                    <select 
-                      className="w-full border border-slate-300 rounded p-2" 
-                      value={qForm.category_id || ''} 
-                      onChange={(e) => setQForm({ ...qForm, category_id: e.target.value ? parseInt(e.target.value) : null })}
-                    >
-                      <option value="">Tanpa Folder</option>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Folder / Kategori (Bisa Pilih Banyak)</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 max-h-32 overflow-y-auto custom-scrollbar">
                       {categories?.map((cat: any) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        <label key={cat.id} className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer hover:text-brand-600">
+                          <input 
+                            type="checkbox" 
+                            checked={qForm.category_ids.includes(cat.id)}
+                            onChange={(e) => {
+                              const ids = e.target.checked 
+                                ? [...qForm.category_ids, cat.id]
+                                : qForm.category_ids.filter(id => id !== cat.id);
+                              setQForm({ ...qForm, category_ids: ids });
+                            }}
+                            className="rounded text-brand-600 focus:ring-brand-500"
+                          />
+                          <span className="truncate">{cat.name}</span>
+                        </label>
                       ))}
-                    </select>
+                      {categories?.length === 0 && <p className="text-xs text-slate-400 italic col-span-3">Belum ada folder.</p>}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -258,7 +386,7 @@ export const QuestionsTab = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Tipe Soal</label>
-                    <select className="w-full border border-slate-300 rounded p-2" value={qForm.question_type} onChange={(e) => setQForm({ ...qForm, question_type: e.target.value, correct_answer: '', option_a: '', option_b: '', option_c: '', option_d: '' })}>
+                    <select className="w-full border border-slate-300 rounded p-2" value={qForm.question_type} onChange={(e) => setQForm({ ...qForm, question_type: e.target.value, correct_answer: '', option_a: '', option_b: '', option_c: '', option_d: '', option_e: '' })}>
                       <option value="MULTIPLE_CHOICE">Pilihan Ganda</option>
                       <option value="MULTIPLE_ANSWERS">Pilihan Ganda (Bisa Banyak Jawaban)</option>
                       <option value="TRUE_FALSE">Benar / Salah</option>
@@ -283,15 +411,54 @@ export const QuestionsTab = () => {
                 {/* ---- MULTIPLE_CHOICE ---- */}
                 {qForm.question_type === 'MULTIPLE_CHOICE' && (
                   <>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                        <div key={opt}><label className="block text-sm font-medium text-slate-700 mb-1">Pilihan {opt.toUpperCase()}</label>
-                          <input className="w-full border border-slate-300 rounded p-2" value={(qForm as any)[`option_${opt}`]} onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
+                        <div key={opt} className="p-3 border border-slate-200 rounded-lg bg-slate-50/50">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Pilihan {opt.toUpperCase()}</label>
+                          <input 
+                            className="w-full border border-slate-300 rounded p-2 mb-2 bg-white" 
+                            value={(qForm as any)[`option_${opt}`]} 
+                            onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} 
+                            placeholder={`Teks pilihan ${opt.toUpperCase()}...`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="file" 
+                              id={`opt_img_${opt}`} 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={(e) => handleOptionImageUpload(e, opt)} 
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => document.getElementById(`opt_img_${opt}`)?.click()}
+                              className="flex items-center gap-1 text-[10px] bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-50 text-slate-600 transition-colors"
+                            >
+                              <Upload size={12} /> {(qForm as any)[`option_${opt}_image`] ? 'Ganti Gambar' : 'Upload Gambar'}
+                            </button>
+                            {(qForm as any)[`option_${opt}_image`] && (
+                              <button 
+                                type="button"
+                                onClick={() => setQForm({ ...qForm, [`option_${opt}_image`]: '' })}
+                                className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                          {(qForm as any)[`option_${opt}_image`] && (
+                            <img 
+                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              alt={`Pilihan ${opt}`} 
+                              className="mt-2 h-20 object-contain rounded border bg-white" 
+                            />
+                          )}
+                        </div>
                       ))}
                     </div>
                     <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Kunci Jawaban</label>
                       <select className="w-full border border-slate-300 rounded p-2" value={qForm.correct_answer} onChange={(e) => setQForm({ ...qForm, correct_answer: e.target.value })}>
-                        <option value="A">Pilihan A</option><option value="B">Pilihan B</option><option value="C">Pilihan C</option><option value="D">Pilihan D</option>
+                        <option value="A">Pilihan A</option><option value="B">Pilihan B</option><option value="C">Pilihan C</option><option value="D">Pilihan D</option><option value="E">Pilihan E</option>
                       </select></div>
                   </>
                 )}
@@ -299,16 +466,55 @@ export const QuestionsTab = () => {
                 {/* ---- MULTIPLE_ANSWERS ---- */}
                 {qForm.question_type === 'MULTIPLE_ANSWERS' && (
                   <>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                        <div key={opt}><label className="block text-sm font-medium text-slate-700 mb-1">Pilihan {opt.toUpperCase()}</label>
-                          <input className="w-full border border-slate-300 rounded p-2" value={(qForm as any)[`option_${opt}`]} onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
+                        <div key={opt} className="p-3 border border-slate-200 rounded-lg bg-slate-50/50">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Pilihan {opt.toUpperCase()}</label>
+                          <input 
+                            className="w-full border border-slate-300 rounded p-2 mb-2 bg-white" 
+                            value={(qForm as any)[`option_${opt}`]} 
+                            onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} 
+                            placeholder={`Teks pilihan ${opt.toUpperCase()}...`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="file" 
+                              id={`opt_img_ma_${opt}`} 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={(e) => handleOptionImageUpload(e, opt)} 
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => document.getElementById(`opt_img_ma_${opt}`)?.click()}
+                              className="flex items-center gap-1 text-[10px] bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-50 text-slate-600 transition-colors"
+                            >
+                              <Upload size={12} /> {(qForm as any)[`option_${opt}_image`] ? 'Ganti Gambar' : 'Upload Gambar'}
+                            </button>
+                            {(qForm as any)[`option_${opt}_image`] && (
+                              <button 
+                                type="button"
+                                onClick={() => setQForm({ ...qForm, [`option_${opt}_image`]: '' })}
+                                className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                          {(qForm as any)[`option_${opt}_image`] && (
+                            <img 
+                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              alt={`Pilihan ${opt}`} 
+                              className="mt-2 h-20 object-contain rounded border bg-white" 
+                            />
+                          )}
+                        </div>
                       ))}
                     </div>
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-slate-700 mb-2">Pilih semua jawaban yang BENAR:</label>
                       <div className="flex gap-4 flex-wrap">
-                        {(['A','B','C','D'] as const).map(opt => {
+                        {(['A','B','C','D','E'] as const).map(opt => {
                           const selected = qForm.correct_answer.split(',').map(s=>s.trim()).filter(Boolean);
                           const isChecked = selected.includes(opt);
                           return (
@@ -341,9 +547,9 @@ export const QuestionsTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {(['a','b','c','d'] as const).map((opt, idx) => {
+                          {(['a','b','c','d','e'] as const).map((opt, idx) => {
                             const tfAnswers = qForm.correct_answer.split(',').map(s=>s.trim());
-                            while(tfAnswers.length < 4) tfAnswers.push('');
+                            while(tfAnswers.length < 5) tfAnswers.push('');
                             const currentAnswer = tfAnswers[idx] || '';
                             return (
                               <tr key={opt} className="border-t border-slate-100">
@@ -354,12 +560,12 @@ export const QuestionsTab = () => {
                                 </td>
                                 <td className="p-2 text-center">
                                   <input type="radio" name={`tf_create_${opt}`} value="T" checked={currentAnswer === 'T'}
-                                    onChange={() => { const a = qForm.correct_answer.split(',').map(s=>s.trim()); while(a.length<4)a.push(''); a[idx]='T'; setQForm({ ...qForm, correct_answer: a.join(',') }); }}
+                                    onChange={() => { const a = qForm.correct_answer.split(',').map(s=>s.trim()); while(a.length<5)a.push(''); a[idx]='T'; setQForm({ ...qForm, correct_answer: a.join(',') }); }}
                                     className="w-5 h-5 accent-green-500" />
                                 </td>
                                 <td className="p-2 text-center">
                                   <input type="radio" name={`tf_create_${opt}`} value="F" checked={currentAnswer === 'F'}
-                                    onChange={() => { const a = qForm.correct_answer.split(',').map(s=>s.trim()); while(a.length<4)a.push(''); a[idx]='F'; setQForm({ ...qForm, correct_answer: a.join(',') }); }}
+                                    onChange={() => { const a = qForm.correct_answer.split(',').map(s=>s.trim()); while(a.length<5)a.push(''); a[idx]='F'; setQForm({ ...qForm, correct_answer: a.join(',') }); }}
                                     className="w-5 h-5 accent-red-500" />
                                 </td>
                               </tr>
@@ -380,71 +586,13 @@ export const QuestionsTab = () => {
                 
                 <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan <span className="text-slate-400 font-normal text-xs">(opsional — gunakan editor untuk format teks & rumus)</span></label>
                   <RichTextEditor value={qForm.explanation} onChange={(val: string) => setQForm({ ...qForm, explanation: val })} placeholder="Jelaskan mengapa jawaban ini benar..." minHeight="100px" /></div>
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 mt-6">
                   <Button onClick={() => createQuestionMutation.mutate(qForm)} isLoading={createQuestionMutation.isPending} disabled={!qForm.question_text || (qForm.question_type === 'MULTIPLE_CHOICE' && (!qForm.option_a || !qForm.option_b || !qForm.option_c || !qForm.option_d))}>Simpan Soal</Button>
                 </div>
-              </div>
-            ) : qLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mb-4"></div>
-                <p>Memuat daftar soal...</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-500">
-                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Isi Soal</th>
-                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Mata Pelajaran</th>
-                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Kesulitan</th>
-                      <th className="p-4 font-semibold uppercase tracking-wider text-xs">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {questions?.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="p-20 text-center">
-                          <div className="flex flex-col items-center text-slate-400">
-                            <BookOpen size={48} className="mb-4 opacity-20" />
-                            <p className="text-lg font-medium text-slate-500">Belum ada soal di folder ini</p>
-                            <p className="text-sm">Klik "Buat Soal" untuk mulai menambahkan pertanyaan.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                    {questions?.map((q: any) => (
-                      <tr key={q.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
-                        <td className="p-4 font-medium text-slate-700 max-w-md">
-                          <div className="truncate">{stripHtml(q.question_text)}</div>
-                        </td>
-                        <td className="p-4 text-slate-600">
-                          <span className="bg-slate-100 px-2 py-1 rounded text-xs">{q.subject || 'Umum'}</span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                            q.difficulty === 'Hard' ? 'bg-red-50 text-red-600' : 
-                            q.difficulty === 'Normal' ? 'bg-blue-50 text-blue-600' : 
-                            'bg-emerald-50 text-emerald-600'
-                          }`}>
-                            {q.difficulty || 'Normal'}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-1">
-                            <button onClick={() => setDetailQuestion(q)} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors" title="Detail"><Eye size={16} /></button>
-                            <button onClick={() => { setEditingQuestion(q); setQForm({ ...q, question_type: q.question_type || 'MULTIPLE_CHOICE' }); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors" title="Edit"><Edit2 size={16} /></button>
-                            <button onClick={() => confirm('Hapus soal ini?') && deleteQuestionMutation.mutate(q.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Hapus"><Trash2 size={16} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MODAL DETAIL QUESTION */}
       {detailQuestion && (
@@ -464,11 +612,20 @@ export const QuestionsTab = () => {
                 {detailQuestion.image_url && <img src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + detailQuestion.image_url.replace('/api/v1', '')} alt="Soal" className="mt-4 max-h-64 object-contain rounded-lg border" />}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                  <div key={opt} className={`p-4 rounded-lg border flex items-start gap-3 ${detailQuestion.correct_answer === opt.toUpperCase() ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100'}`}>
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${detailQuestion.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500'}`}>{opt.toUpperCase()}</span>
-                    <p className="text-sm text-slate-700">{(detailQuestion as any)[`option_${opt}`]}</p>
-                    {detailQuestion.correct_answer === opt.toUpperCase() && <CheckCircle2 size={16} className="text-green-600 ml-auto" />}
+                {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
+                  <div key={opt} className={`p-4 rounded-lg border flex flex-col gap-3 ${detailQuestion.correct_answer === opt.toUpperCase() ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100'}`}>
+                    <div className="flex items-start gap-3">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${detailQuestion.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500'}`}>{opt.toUpperCase()}</span>
+                      <p className="text-sm text-slate-700">{(detailQuestion as any)[`option_${opt}`]}</p>
+                      {detailQuestion.correct_answer === opt.toUpperCase() && <CheckCircle2 size={16} className="text-green-600 ml-auto" />}
+                    </div>
+                    {(detailQuestion as any)[`option_${opt}_image`] && (
+                      <img 
+                        src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (detailQuestion as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                        alt={`Gambar Pilihan ${opt.toUpperCase()}`} 
+                        className="max-h-32 object-contain rounded border self-start bg-white"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -497,12 +654,26 @@ export const QuestionsTab = () => {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
                   <input className="w-full border border-slate-300 rounded p-2" value={qForm.subject} onChange={(e) => setQForm({ ...qForm, subject: e.target.value })} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Folder / Kategori</label>
-                  <select className="w-full border border-slate-300 rounded p-2" value={qForm.category_id || ''} onChange={(e) => setQForm({ ...qForm, category_id: e.target.value ? parseInt(e.target.value) : null })}>
-                    <option value="">Tanpa Folder</option>
-                    {categories?.map((cat: any) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-                  </select>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Folder / Kategori (Bisa Pilih Banyak)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 max-h-32 overflow-y-auto custom-scrollbar">
+                    {categories?.map((cat: any) => (
+                      <label key={cat.id} className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer hover:text-brand-600">
+                        <input 
+                          type="checkbox" 
+                          checked={qForm.category_ids?.includes(cat.id)}
+                          onChange={(e) => {
+                            const ids = e.target.checked 
+                              ? [...(qForm.category_ids || []), cat.id]
+                              : (qForm.category_ids || []).filter((id: number) => id !== cat.id);
+                            setQForm({ ...qForm, category_ids: ids });
+                          }}
+                          className="rounded text-brand-600 focus:ring-brand-500"
+                        />
+                        <span className="truncate">{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -531,30 +702,108 @@ export const QuestionsTab = () => {
               {/* Edit opsinya */}
               {qForm.question_type === 'MULTIPLE_CHOICE' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                      <div key={opt}><label className="block text-sm font-medium text-slate-700 mb-1">Pilihan {opt.toUpperCase()}</label>
-                        <input className="w-full border border-slate-300 rounded p-2" value={(qForm as any)[`option_${opt}`]} onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} /></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
+                        <div key={opt} className="p-3 border border-slate-200 rounded-lg bg-slate-50/50">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Pilihan {opt.toUpperCase()}</label>
+                          <input 
+                            className="w-full border border-slate-300 rounded p-2 mb-2 bg-white" 
+                            value={(qForm as any)[`option_${opt}`]} 
+                            onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} 
+                            placeholder={`Teks pilihan ${opt.toUpperCase()}...`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="file" 
+                              id={`opt_img_edit_${opt}`} 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={(e) => handleOptionImageUpload(e, opt)} 
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => document.getElementById(`opt_img_edit_${opt}`)?.click()}
+                              className="flex items-center gap-1 text-[10px] bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-50 text-slate-600 transition-colors"
+                            >
+                              <Upload size={12} /> {(qForm as any)[`option_${opt}_image`] ? 'Ganti Gambar' : 'Upload Gambar'}
+                            </button>
+                            {(qForm as any)[`option_${opt}_image`] && (
+                              <button 
+                                type="button"
+                                onClick={() => setQForm({ ...qForm, [`option_${opt}_image`]: '' })}
+                                className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                          {(qForm as any)[`option_${opt}_image`] && (
+                            <img 
+                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              alt={`Pilihan ${opt}`} 
+                              className="mt-2 h-20 object-contain rounded border bg-white" 
+                            />
+                          )}
+                        </div>
                     ))}
                   </div>
                   <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Kunci Jawaban</label>
                     <select className="w-full border border-slate-300 rounded p-2" value={qForm.correct_answer} onChange={(e) => setQForm({ ...qForm, correct_answer: e.target.value })}>
-                      <option value="A">Pilihan A</option><option value="B">Pilihan B</option><option value="C">Pilihan C</option><option value="D">Pilihan D</option>
+                      <option value="A">Pilihan A</option><option value="B">Pilihan B</option><option value="C">Pilihan C</option><option value="D">Pilihan D</option><option value="E">Pilihan E</option>
                     </select></div>
                 </>
               )}
               {qForm.question_type === 'MULTIPLE_ANSWERS' && (
                  <>
-                   <div className="grid grid-cols-2 gap-4 mt-4">
-                     {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                       <div key={opt}><label className="block text-sm font-medium text-slate-700 mb-1">Pilihan {opt.toUpperCase()}</label>
-                         <input className="w-full border border-slate-300 rounded p-2" value={(qForm as any)[`option_${opt}`]} onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} /></div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                     {(['a', 'b', 'c', 'd', 'e'] as const).map(opt => (
+                        <div key={opt} className="p-3 border border-slate-200 rounded-lg bg-slate-50/50">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Pilihan {opt.toUpperCase()}</label>
+                          <input 
+                            className="w-full border border-slate-300 rounded p-2 mb-2 bg-white" 
+                            value={(qForm as any)[`option_${opt}`]} 
+                            onChange={(e) => setQForm({ ...qForm, [`option_${opt}`]: e.target.value })} 
+                            placeholder={`Teks pilihan ${opt.toUpperCase()}...`}
+                          />
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="file" 
+                              id={`opt_img_edit_ma_${opt}`} 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={(e) => handleOptionImageUpload(e, opt)} 
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => document.getElementById(`opt_img_edit_ma_${opt}`)?.click()}
+                              className="flex items-center gap-1 text-[10px] bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-50 text-slate-600 transition-colors"
+                            >
+                              <Upload size={12} /> {(qForm as any)[`option_${opt}_image`] ? 'Ganti Gambar' : 'Upload Gambar'}
+                            </button>
+                            {(qForm as any)[`option_${opt}_image`] && (
+                              <button 
+                                type="button"
+                                onClick={() => setQForm({ ...qForm, [`option_${opt}_image`]: '' })}
+                                className="text-red-500 hover:text-red-700 text-[10px] font-medium"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                          {(qForm as any)[`option_${opt}_image`] && (
+                            <img 
+                              src={(import.meta.env.VITE_API_URL || 'http://localhost:8000') + (qForm as any)[`option_${opt}_image`].replace('/api/v1', '')} 
+                              alt={`Pilihan ${opt}`} 
+                              className="mt-2 h-20 object-contain rounded border bg-white" 
+                            />
+                          )}
+                        </div>
                      ))}
                    </div>
                    <div className="mt-4">
                      <label className="block text-sm font-medium text-slate-700 mb-2">Pilih semua jawaban yang BENAR:</label>
                      <div className="flex gap-4 flex-wrap">
-                       {(['A','B','C','D'] as const).map(opt => {
+                       {(['A','B','C','D','E'] as const).map(opt => {
                          const selected = typeof qForm.correct_answer === 'string' ? qForm.correct_answer.split(',').map(s=>s.trim()).filter(Boolean) : [];
                          const isChecked = selected.includes(opt);
                          return (
@@ -585,9 +834,9 @@ export const QuestionsTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {(['a','b','c','d'] as const).map((opt, idx) => {
+                          {(['a','b','c','d','e'] as const).map((opt, idx) => {
                             const tfAnswers = typeof qForm.correct_answer === 'string' ? qForm.correct_answer.split(',').map(s=>s.trim()) : [];
-                            while(tfAnswers.length < 4) tfAnswers.push('');
+                            while(tfAnswers.length < 5) tfAnswers.push('');
                             const currentAnswer = tfAnswers[idx] || '';
                             return (
                               <tr key={opt} className="border-t border-slate-100">
@@ -622,7 +871,7 @@ export const QuestionsTab = () => {
               <div className="mt-4"><label className="block text-sm font-medium text-slate-700 mb-1">Pembahasan</label>
                 <RichTextEditor value={qForm.explanation} onChange={(val: string) => setQForm({ ...qForm, explanation: val })} placeholder="Jelaskan mengapa jawaban ini benar..." minHeight="100px" /></div>
 
-              <div className="pt-4 border-t mt-6">
+              <div className="pt-4 mt-6">
                  <Button onClick={() => updateQuestionMutation.mutate(qForm)} isLoading={updateQuestionMutation.isPending}>Simpan Perubahan</Button>
               </div>
             </div>
