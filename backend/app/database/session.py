@@ -4,8 +4,7 @@ from app.core.config import settings
 
 engine = create_engine(
     settings.DATABASE_URL, 
-    # pool_pre_ping=True
-    # fast_executemany=True is highly recommended for pyodbc, but we'll add it if needed
+    pool_pre_ping=True
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
