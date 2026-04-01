@@ -9,7 +9,7 @@ from app.models.user import User as UserModel
 
 router = APIRouter()
 
-@router.get("/", response_model=List[ClassResponse])
+@router.get("", response_model=List[ClassResponse])
 def read_classes(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -22,7 +22,7 @@ def read_classes(
     classes = crud_class.get_multi(db, skip=skip, limit=limit)
     return classes
 
-@router.post("/", response_model=ClassResponse)
+@router.post("", response_model=ClassResponse)
 def create_class(
     *,
     db: Session = Depends(deps.get_db),

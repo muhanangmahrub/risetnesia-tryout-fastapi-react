@@ -9,7 +9,7 @@ from app.models.tryout import Tryout as TryoutModel
 
 router = APIRouter()
 
-@router.get("/", response_model=List[TryoutResponse])
+@router.get("", response_model=List[TryoutResponse])
 def read_tryouts(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -33,7 +33,7 @@ def read_tryouts(
         return tryouts
 
 
-@router.post("/", response_model=TryoutResponse)
+@router.post("", response_model=TryoutResponse)
 def create_tryout(
     *,
     db: Session = Depends(deps.get_db),

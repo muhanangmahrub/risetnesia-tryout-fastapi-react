@@ -9,7 +9,7 @@ from app.models.user import User as UserModel
 router = APIRouter()
 
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("", response_model=List[CategoryResponse])
 def read_categories(
     db: Session = Depends(deps.get_db),
     current_user: UserModel = Depends(deps.get_current_active_user),
@@ -18,7 +18,7 @@ def read_categories(
     return crud_category.get_multi(db)
 
 
-@router.post("/", response_model=CategoryResponse)
+@router.post("", response_model=CategoryResponse)
 def create_category(
     *,
     db: Session = Depends(deps.get_db),

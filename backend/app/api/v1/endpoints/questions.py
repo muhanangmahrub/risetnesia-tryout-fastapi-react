@@ -20,7 +20,7 @@ cloudinary.config(
     secure=True,
 )
 
-@router.get("/", response_model=List[QuestionResponse])
+@router.get("", response_model=List[QuestionResponse])
 def read_questions(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -36,7 +36,7 @@ def read_questions(
         query = query.filter(QuestionModel.categories.any(id=category_id))
     return query.order_by(QuestionModel.id.asc()).offset(skip).limit(limit).all()
 
-@router.post("/", response_model=QuestionResponse)
+@router.post("", response_model=QuestionResponse)
 def create_question(
     *,
     db: Session = Depends(deps.get_db),
