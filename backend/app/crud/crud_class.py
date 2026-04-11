@@ -6,6 +6,9 @@ from app.schemas.class_schema import ClassCreate, ClassUpdate
 def get(db: Session, id: int) -> Optional[Class]:
     return db.query(Class).filter(Class.id == id).first()
 
+def get_by_enrollment_code(db: Session, code: str) -> Optional[Class]:
+    return db.query(Class).filter(Class.enrollment_code == code).first()
+
 def get_multi(db: Session, *, skip: int = 0, limit: int = 100) -> List[Class]:
     return db.query(Class).order_by(Class.id.asc()).offset(skip).limit(limit).all()
 

@@ -1,9 +1,11 @@
 from typing import Any, List
+import random
+import string
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.crud import crud_class, crud_user
-from app.schemas.class_schema import ClassResponse, ClassCreate, ClassUpdate
+from app.schemas.class_schema import ClassResponse, ClassCreate, ClassUpdate, ClassJoinRequest
 from app.schemas.user import User as UserSchema
 from app.models.user import User as UserModel
 
@@ -21,6 +23,18 @@ def read_classes(
     """
     classes = crud_class.get_multi(db, skip=skip, limit=limit)
     return classes
+
+@router.get("/my", response_model=List[ClassResponse])
+def get_my_classes(
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get classes for the current user
+    """
+    if current_user.role == "student":
+        return current_user.enrolled_classes
+    return current_user.classes
 
 @router.post("", response_model=ClassResponse)
 def create_class(
@@ -122,4 +136,51 @@ def delete_class(
     if not db_class:
         raise HTTPException(status_code=404, detail="Class not found")
     db_class = crud_class.delete(db, id=class_id)
+    return db_class
+
+@router.post("/{class_id}/generate-code", response_model=ClassResponse)
+def generate_class_code(
+    class_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: UserModel = Depends(deps.get_current_active_user),
+):
+    """
+    Generate or regenerate an enrollment code for a class.
+    Both Admin and Tutor (if assigned) can generate.
+    """
+    db_class = crud_class.get(db, id=class_id)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class not found")
+        
+    if current_user.role != "admin" and db_class.tutor_id != current_user.id:
+         raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    while crud_class.get_by_enrollment_code(db, code=code):
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
+    db_class.enrollment_code = code
+    db.commit()
+    db.refresh(db_class)
+    return db_class
+
+@router.post("/join", response_model=ClassResponse)
+def join_class(
+    *,
+    db: Session = Depends(deps.get_db),
+    join_in: ClassJoinRequest,
+    current_user: UserModel = Depends(deps.get_current_active_user),
+):
+    """
+    Student joins a class using a code.
+    """
+    if current_user.role != "student":
+        raise HTTPException(status_code=403, detail="Only students can join classes via code")
+        
+    db_class = crud_class.get_by_enrollment_code(db, code=join_in.code)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Invalid enrollment code")
+        
+    crud_class.enroll_student(db, db_class=db_class, student=current_user)
     return db_class

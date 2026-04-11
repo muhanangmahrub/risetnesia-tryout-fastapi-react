@@ -35,6 +35,7 @@ class Class(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     tutor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    enrollment_code = Column(String(50), unique=True, index=True, nullable=True)
 
     # Relationships
     tutor = relationship("User", back_populates="classes")

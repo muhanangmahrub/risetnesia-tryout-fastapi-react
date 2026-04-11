@@ -73,6 +73,12 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
     onError: (e: any) => alert(e.response?.data?.detail || 'Error unenrolling student')
   });
 
+  const generateCodeMutation = useMutation({
+    mutationFn: async (classId: number) => (await api.post(`/classes/${classId}/generate-code`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+    onError: (e: any) => alert(e.response?.data?.detail || 'Error generating code')
+  });
+
   if (!isAdmin) return null;
 
   return (
@@ -91,6 +97,7 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
                     <th className="p-4 font-medium">ID</th>
                     <th className="p-4 font-medium">Nama Kelas</th>
                     <th className="p-4 font-medium">Tutor</th>
+                    <th className="p-4 font-medium">Kode Masuk</th>
                     <th className="p-4 font-medium">Aksi</th>
                   </tr>
                 </thead>
@@ -113,6 +120,16 @@ export const ClassesTab = ({ isAdmin }: { isAdmin: boolean }) => {
                               <span className="text-slate-400 italic">Belum ditentukan</span>
                             )}
                           </td>
+                        <td className="p-4">
+                          {c.enrollment_code ? (
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm bg-slate-200 px-2 py-1 rounded text-slate-800">{c.enrollment_code}</span>
+                              <button onClick={() => generateCodeMutation.mutate(c.id)} className="text-xs text-brand-600 hover:underline">Reset</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => generateCodeMutation.mutate(c.id)} className="text-xs text-brand-600 border border-brand-200 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded">Generate</button>
+                          )}
+                        </td>
                         <td className="p-4">
                           <div className="flex gap-2">
                             <Button size="sm" variant="secondary" onClick={() => setSelectedClassId(selectedClassId === c.id ? null : c.id)}>{selectedClassId === c.id ? 'Sembunyikan' : 'Kelola Siswa'}</Button>

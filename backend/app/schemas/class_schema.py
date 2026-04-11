@@ -18,6 +18,7 @@ class ClassUpdate(ClassBase):
 class ClassInDBBase(ClassBase):
     id: int
     tutor_id: Optional[int] = None
+    enrollment_code: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -25,3 +26,6 @@ class ClassInDBBase(ClassBase):
 # Properties to return to client
 class ClassResponse(ClassInDBBase):
     pass
+
+class ClassJoinRequest(BaseModel):
+    code: str
