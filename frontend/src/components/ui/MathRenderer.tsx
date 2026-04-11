@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import renderMathInElement from 'katex/contrib/auto-render';
 import 'katex/dist/katex.min.css';
 
@@ -10,8 +10,14 @@ interface MathRendererProps {
 /**
  * Renders rich-text HTML content that may contain KaTeX math expressions.
  * Supports both inline ($...$) and display-block ($$...$$) notation.
+ *
+ * Wrapped with React.memo to prevent unnecessary re-renders:
+ * If the parent re-renders (e.g. due to answer state changes), this component
+ * will NOT re-render unless html/className actually change. Without memo,
+ * dangerouslySetInnerHTML would overwrite the KaTeX-rendered DOM with raw LaTeX
+ * on every parent re-render, reverting the rendered math back to plain text.
  */
-export const MathRenderer = ({ html, className = '' }: MathRendererProps) => {
+export const MathRenderer = memo(({ html, className = '' }: MathRendererProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,4 +42,4 @@ export const MathRenderer = ({ html, className = '' }: MathRendererProps) => {
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-};
+});
