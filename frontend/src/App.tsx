@@ -4,6 +4,7 @@ import { api } from './services/api';
 
 import { MainLayout } from './layouts/MainLayout';
 import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
 import { ManagementDashboard } from './pages/management/ManagementDashboard';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { ExamPage } from './pages/student/ExamPage';
@@ -38,6 +39,7 @@ function App() {
       ) : (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       )}

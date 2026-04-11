@@ -8,9 +8,34 @@ from app.core import security
 from app.core.config import settings
 from app.crud import crud_user
 from app.schemas.token import Token
-from app.schemas.user import User
+from app.schemas.user import User, UserCreate, UserRegister
 
 router = APIRouter()
+
+@router.post("/register", response_model=User)
+def register_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: UserRegister,
+) -> Any:
+    """
+    Public registration endpoint. Sets default role to student.
+    """
+    user = crud_user.get_by_email(db, email=user_in.email)
+    if user:
+        raise HTTPException(
+            status_code=400,
+            detail="The user with this email already exists in the system.",
+        )
+    user_create = UserCreate(
+        name=user_in.name,
+        school=user_in.school,
+        email=user_in.email,
+        password=user_in.password,
+        role="student"
+    )
+    user = crud_user.create(db, obj_in=user_create)
+    return user
 
 @router.post("/login", response_model=Token)
 def login_access_token(

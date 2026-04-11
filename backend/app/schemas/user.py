@@ -6,12 +6,20 @@ from datetime import datetime
 class UserBase(BaseModel):
     email: EmailStr
     name: str
+    school: Optional[str] = None
     role: str = "student"
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str
     role: str
+
+# Properties to receive via API on registration
+class UserRegister(BaseModel):
+    name: str
+    school: str
+    email: EmailStr
+    password: str
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):

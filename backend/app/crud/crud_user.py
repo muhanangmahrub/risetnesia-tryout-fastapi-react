@@ -25,6 +25,7 @@ def create(db: Session, *, obj_in: UserCreate) -> User:
     db_obj = User(
         email=obj_in.email,
         name=obj_in.name,
+        school=obj_in.school,
         role=obj_in.role,
         password_hash=get_password_hash(obj_in.password),
     )

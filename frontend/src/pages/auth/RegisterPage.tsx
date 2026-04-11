@@ -5,46 +5,32 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { BookOpen } from 'lucide-react';
 
-export const LoginPage = () => {
+export const RegisterPage = () => {
+  const [name, setName] = useState('');
+  const [school, setSchool] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('registered') === 'true') {
-      setSuccessMsg('Registration successful! Please sign in.');
-    }
-  }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', email); // OAuth2 expects 'username' instead of 'email'
-      formData.append('password', password);
+      // Step 1: Register User
+      await api.post('/auth/register', {
+        name,
+        school,
+        email,
+        password
+      });
 
-      const response = await api.post('/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      
-      localStorage.setItem('token', response.data.access_token);
-      
-      // Fetch user role to redirect
-      const userRes = await api.get('/auth/me', {
-        headers: { Authorization: `Bearer ${response.data.access_token}` }
-      });
-      
-      navigate(`/${userRes.data.role}`);
-      window.location.reload(); // Quick way to reset React Query state
+      navigate('/login?registered=true');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials');
+      setError(err.response?.data?.detail || 'Failed to register. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +47,8 @@ export const LoginPage = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-500/20 backdrop-blur-md border border-brand-500/30 mb-4 shadow-lg shadow-brand-500/20">
             <BookOpen className="w-8 h-8 text-brand-400" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome Back</h1>
-          <p className="text-Brand-100/70 text-slate-300">Sign in to access your dashboard</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Create an Account</h1>
+          <p className="text-Brand-100/70 text-slate-300">Join us and start your journey</p>
         </div>
 
         {error && (
@@ -71,13 +57,27 @@ export const LoginPage = () => {
           </div>
         )}
 
-        {successMsg && (
-          <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center">
-            {successMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleRegister} className="space-y-6">
+          <Input
+            label="Full Name"
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="John Doe"
+            labelClassName="text-slate-200"
+            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+          />
+          <Input
+            label="School"
+            type="text"
+            required
+            value={school}
+            onChange={(e) => setSchool(e.target.value)}
+            placeholder="SMA N 1 Jakarta"
+            labelClassName="text-slate-200"
+            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+          />
           <Input
             label="Email Address"
             type="email"
@@ -104,18 +104,17 @@ export const LoginPage = () => {
             className="w-full py-3 text-lg font-semibold shadow-brand-500/30 shadow-lg"
             isLoading={isLoading}
           >
-            Sign In
+            Sign Up
           </Button>
         </form>
         
-        <div className="mt-8 text-center text-sm text-slate-400">
+        <div className="mt-6 text-center text-sm text-slate-400">
           <p>
-            Don't have an account?{' '}
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 font-medium hover:underline transition-colors">
-              Sign Up
+            Already have an account?{' '}
+            <Link to="/login" className="text-brand-400 hover:text-brand-300 font-medium hover:underline transition-colors">
+              Sign In
             </Link>
           </p>
-          <p className="mt-4 opacity-50">Mock login for testing: admin@test.com / password123</p>
         </div>
       </div>
     </div>
