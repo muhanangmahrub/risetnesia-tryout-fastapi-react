@@ -1,6 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.models.tryout import Question
+from app.models.result import StudentAnswer
 from app.schemas.question import QuestionCreate, QuestionUpdate
 from app.models.category import QuestionCategory
 
@@ -40,7 +41,17 @@ def update(db: Session, *, db_obj: Question, obj_in: QuestionUpdate) -> Question
     return db_obj
 
 def delete(db: Session, *, id: int) -> Question:
-    obj = db.query(Question).get(id)
+    obj = db.query(Question).filter(Question.id == id).first()
+    if not obj:
+        return None
+    # 1. Remove from all many-to-many associations (tryout_questions, question_category_association)
+    obj.tryouts.clear()
+    obj.categories.clear()
+    db.flush()
+    # 2. Delete related student answers that reference this question
+    db.query(StudentAnswer).filter(StudentAnswer.question_id == id).delete(synchronize_session=False)
+    db.flush()
+    # 3. Now safe to delete the question itself
     db.delete(obj)
     db.commit()
     return obj
