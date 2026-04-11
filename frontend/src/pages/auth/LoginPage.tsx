@@ -86,7 +86,7 @@ export const LoginPage = () => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           <Input
             label="Password"
@@ -96,7 +96,7 @@ export const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           
           <Button

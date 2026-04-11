@@ -64,9 +64,9 @@ export const RegisterPage = () => {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="John Doe"
+            placeholder="Budi Santoso"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           <Input
             label="School"
@@ -76,7 +76,7 @@ export const RegisterPage = () => {
             onChange={(e) => setSchool(e.target.value)}
             placeholder="SMA N 1 Jakarta"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           <Input
             label="Email Address"
@@ -84,9 +84,9 @@ export const RegisterPage = () => {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="budi@example.com"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           <Input
             label="Password"
@@ -96,7 +96,7 @@ export const RegisterPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             labelClassName="text-slate-200"
-            inputClassName="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
+            inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
           
           <Button
