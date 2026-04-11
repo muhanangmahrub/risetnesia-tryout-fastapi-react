@@ -34,8 +34,8 @@ def submit_tryout(
     for ans in submission_in.answers:
         answer_data = AnswerCreate(
             tryout_id=submission_in.tryout_id,
-            question_id=ans["question_id"],
-            answer=ans["answer"]
+            question_id=ans.get("question_id"),
+            answer=ans.get("answer")
         )
         crud_result.create_answer(db, obj_in=answer_data, student_id=current_user.id)
         

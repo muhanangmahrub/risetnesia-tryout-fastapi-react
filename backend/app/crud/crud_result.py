@@ -24,7 +24,7 @@ def calculate_and_save_result(db: Session, *, tryout_id: int, student_id: int, w
     wrong_count = 0
     
     for answer in answers:
-        question = db.query(Question).get(answer.question_id)
+        question = db.query(Question).filter(Question.id == answer.question_id).first()
         if question:
             q_type = getattr(question, 'question_type', 'MULTIPLE_CHOICE') or 'MULTIPLE_CHOICE'
             
@@ -50,8 +50,10 @@ def calculate_and_save_result(db: Session, *, tryout_id: int, student_id: int, w
             else:
                 wrong_count += 1
             
-    # The real total questions for this tryout
-    total_questions = db.query(Question).filter(Question.tryout_id == tryout_id).count()
+    # The real total questions for this tryout — use the relationship, NOT Question.tryout_id
+    # (questions are linked via the tryout_questions association table, not a direct FK)
+    tryout_obj = db.query(Tryout).filter(Tryout.id == tryout_id).first()
+    total_questions = len(tryout_obj.questions) if tryout_obj else 0
     
     # wrong_count includes both explicitly wrong answers and unanswered questions
     wrong_count = total_questions - correct_count
@@ -120,7 +122,7 @@ def get_exam_review(db: Session, *, tryout_id: int, student_id: int) -> list:
     answer_map = {a.question_id: a.answer for a in student_answers}
 
     # Load all questions for this tryout (in order)
-    tryout = db.query(Tryout).get(tryout_id)
+    tryout = db.query(Tryout).filter(Tryout.id == tryout_id).first()
     if not tryout:
         return []
 

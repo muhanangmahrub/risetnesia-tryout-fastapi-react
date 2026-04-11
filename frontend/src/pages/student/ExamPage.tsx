@@ -34,6 +34,11 @@ export const ExamPage = () => {
       return res.data;
     },
     onSuccess: () => {
+      alert('Ujian berhasil disubmit!');
+      navigate('/student');
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || 'Error saat submit tryout. Mungkin Anda sudah pernah mensubmit ujian ini sebelumnya.');
       navigate('/student');
     }
   });
