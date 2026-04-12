@@ -33,14 +33,14 @@ export const LoginPage = () => {
       const response = await api.post('/auth/login', formData, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
-      
+
       localStorage.setItem('token', response.data.access_token);
-      
+
       // Fetch user role to redirect
       const userRes = await api.get('/auth/me', {
         headers: { Authorization: `Bearer ${response.data.access_token}` }
       });
-      
+
       navigate(`/${userRes.data.role}`);
       window.location.reload(); // Quick way to reset React Query state
     } catch (err: any) {
@@ -55,7 +55,7 @@ export const LoginPage = () => {
       {/* Background decorations */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-pulse animation-delay-2000"></div>
-      
+
       <div className="w-full max-w-md relative z-10 glass rounded-2xl shadow-2xl p-8 border border-white/20">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-500/20 backdrop-blur-md border border-brand-500/30 mb-4 shadow-lg shadow-brand-500/20">
@@ -98,7 +98,7 @@ export const LoginPage = () => {
             labelClassName="text-slate-200"
             inputClassName="bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:ring-brand-500"
           />
-          
+
           <Button
             type="submit"
             className="w-full py-3 text-lg font-semibold shadow-brand-500/30 shadow-lg"
@@ -107,7 +107,7 @@ export const LoginPage = () => {
             Sign In
           </Button>
         </form>
-        
+
         <div className="mt-8 text-center text-sm text-slate-400">
           <p>
             Don't have an account?{' '}
@@ -115,7 +115,7 @@ export const LoginPage = () => {
               Sign Up
             </Link>
           </p>
-          <p className="mt-4 opacity-50">Mock login for testing: admin@test.com / password123</p>
+          {/* <p className="mt-4 opacity-50">Mock login for testing: admin@test.com / password123</p> */}
         </div>
       </div>
     </div>

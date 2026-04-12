@@ -25,11 +25,11 @@ export const MainLayout = ({ children, user }: { children: React.ReactNode, user
       <aside className="w-64 bg-slate-900 text-white flex flex-col hidden md:flex h-screen fixed">
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
           <div className="w-8 h-8 rounded bg-brand-500 flex items-center justify-center font-bold text-white shadow-lg shadow-brand-500/30">
-            TO
+            AE
           </div>
-          <span className="font-bold tracking-wider">TRYOUT PRO</span>
+          <span className="font-bold tracking-wider">ALJABAR EDU</span>
         </div>
-        
+
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-4 cursor-default">
             Main Menu
@@ -40,7 +40,7 @@ export const MainLayout = ({ children, user }: { children: React.ReactNode, user
           </a>
           {/* Add more links based on role later */}
         </nav>
-        
+
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 mb-4 px-3">
             <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
@@ -51,7 +51,7 @@ export const MainLayout = ({ children, user }: { children: React.ReactNode, user
               <p className="text-xs text-slate-400 capitalize">{user.role}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
           >
